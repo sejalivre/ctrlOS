@@ -15,6 +15,14 @@ Este documento combina os padrões de desenvolvimento SaaS com especificações 
 - Vendas de produtos e serviços
 - Automação de comunicação (WhatsApp)
 - Relatórios gerenciais simples mas eficazes
+- Autenticação segura com Google OAuth e RBAC
+
+## 🔗 LINKS DO PROJETO
+
+- **Repositório GitHub:** [github.com/sejalivre/ctrlOS](https://github.com/sejalivre/ctrlOS)
+- **Painel Supabase:** [zjapynvxybowjjzktxyd](https://supabase.com/dashboard/project/zjapynvxybowjjzktxyd)
+- **Deploy Vercel:** [ctrl-os](https://vercel.com/sejalivres-projects/ctrl-os)
+- **Domínio Produção:** [os.hpinfo.com.br](https://os.hpinfo.com.br/)
 
 ---
 
@@ -42,15 +50,30 @@ Este documento combina os padrões de desenvolvimento SaaS com especificações 
 ## 🔧 SOLUÇÃO DE PROBLEMAS (TROUBLESHOOTING)
 
 ### Erro: PrismaClientConstructorValidationError
-**Sintoma:** `Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.`
-**Causa:** O Prisma Client pode detectar incorretamente o ambiente e tentar usar o driver "client" (Node-API desativado/WASM) sem um adaptador configurado.
-**Solução:** Forçar o uso da engine "library" no `schema.prisma`:
-```prisma
 generator client {
   provider = "prisma-client-js"
   engineType = "library"
 }
 ```
+
+### Erro: OAuthCreateAccount (Google Login)
+**Sintoma:** Após escolher a conta do Google, o usuário é redirecionado com `error=OAuthCreateAccount`.
+**Causa:** O modelo `User` no banco de dados não possuía os campos `image` e `emailVerified`, exigidos pelo adaptador do Prisma para o NextAuth.
+**Solução:** Adicionar os campos ao `schema.prisma` e sincronizar o banco:
+```prisma
+model User {
+  // ... outros campos
+  emailVerified DateTime?
+  image         String?
+}
+```
+Comando: `npx prisma db push`
+
+### Erro: Incompatibilidade Prisma 7 + Node.js (Vercel/Build)
+**Sintoma:** O build falha ou o cliente Prisma tenta usar o motor WASM e trava.
+**Solução:** Downgrade para a versão estável **LTS (Prisma 6)**.
+Comando: `npm install prisma@6 @prisma/client@6`
+Script Adicional: Adicionar `"postinstall": "prisma generate"` no `package.json` para garantir a geração na Vercel.
 
 ### Estrutura de Pastas TechAssist Pro
 ```
