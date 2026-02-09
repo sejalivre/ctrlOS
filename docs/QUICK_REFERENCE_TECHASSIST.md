@@ -46,6 +46,12 @@ npm run type-check             # Verificar TypeScript
 
 # Verificação completa PRÉ-COMMIT
 npm run lint && npm run test && npm run build && npm run docs:check-all
+
+# 🚀 Enviar alterações para o GitHub
+git status                     # Ver o que mudou
+git add .                      # Adicionar tudo
+git commit -m "mensagem"       # Salvar com mensagem
+git push                       # Enviar para o GitHub
 ```
 
 ---
