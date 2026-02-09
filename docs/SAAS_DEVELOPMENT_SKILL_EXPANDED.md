@@ -32,12 +32,25 @@ Este documento combina os padrões de desenvolvimento SaaS com especificações 
 - **QR Code:** qrcode.react (etiquetas de equipamentos)
 - **Notificações:** Sonner (toast) + Supabase Realtime
 
-### Infraestrutura (Custo Zero)
+### Stack de Infraestrutura (Custo Zero)
 - **Hospedagem:** Vercel (Hobby Plan - 100GB bandwidth/mês)
 - **Banco:** Supabase Free Tier (500MB, 2M Edge Function invocations)
 - **Storage:** Supabase Storage (fotos de equipamentos, 1GB free)
 - **Repositório:** GitHub (privado ou público)
 - **DNS/SSL:** Cloudflare (gratuito)
+
+## 🔧 SOLUÇÃO DE PROBLEMAS (TROUBLESHOOTING)
+
+### Erro: PrismaClientConstructorValidationError
+**Sintoma:** `Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.`
+**Causa:** O Prisma Client pode detectar incorretamente o ambiente e tentar usar o driver "client" (Node-API desativado/WASM) sem um adaptador configurado.
+**Solução:** Forçar o uso da engine "library" no `schema.prisma`:
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+```
 
 ### Estrutura de Pastas TechAssist Pro
 ```

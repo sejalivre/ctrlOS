@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ServiceOrder, Customer, OSStatus } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -124,7 +125,7 @@ export default async function DashboardPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {recentOrders.map((order) => (
+                            {recentOrders.map((order: ServiceOrder & { customer: Customer }) => (
                                 <div
                                     key={order.id}
                                     className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
