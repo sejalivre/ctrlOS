@@ -1,65 +1,178 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ClipboardList, Users, Package, DollarSign, Plus } from "lucide-react";
+import { Providers } from "@/components/Providers";
+import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
 
-export default function Home() {
+async function getStats() {
+  const [
+    customerCount,
+    openOrdersCount,
+    productCount,
+    recentOrders,
+  ] = await Promise.all([
+    prisma.customer.count(),
+    prisma.serviceOrder.count({
+      where: { status: { in: ["OPENED", "IN_QUEUE", "IN_PROGRESS", "AWAITING_PARTS"] } },
+    }),
+    prisma.product.count({ where: { active: true } }),
+    prisma.serviceOrder.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { customer: true },
+    }),
+  ]);
+
+  return { customerCount, openOrdersCount, productCount, recentOrders };
+}
+
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
+
+  // Se não autenticado, redireciona para login
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Se autenticado, exibe o dashboard
+  const { customerCount, openOrdersCount, productCount, recentOrders } = await getStats();
+
+  const stats = [
+    {
+      title: "Clientes Cadastrados",
+      value: customerCount.toString(),
+      icon: Users,
+      href: "/customers",
+      color: "text-blue-500"
+    },
+    {
+      title: "OS Abertas",
+      value: openOrdersCount.toString(),
+      icon: ClipboardList,
+      href: "/os",
+      color: "text-orange-500"
+    },
+    {
+      title: "Produtos Ativos",
+      value: productCount.toString(),
+      icon: Package,
+      href: "/products",
+      color: "text-green-500"
+    },
+    {
+      title: "Receita do Mês",
+      value: "R$ 0,00",
+      icon: DollarSign,
+      href: "/financial",
+      color: "text-emerald-500"
+    },
+  ];
+
+  const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    OPENED: { label: "Aberta", variant: "default" },
+    IN_QUEUE: { label: "Na Fila", variant: "secondary" },
+    IN_PROGRESS: { label: "Em Andamento", variant: "default" },
+    AWAITING_PARTS: { label: "Aguardando Peças", variant: "outline" },
+    READY: { label: "Pronta", variant: "default" },
+    DELIVERED: { label: "Entregue", variant: "secondary" },
+    CANCELLED: { label: "Cancelada", variant: "destructive" },
+    WARRANTY_RETURN: { label: "Garantia", variant: "outline" },
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            Welcome to ctrlOS Pro
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <Providers>
+      <div className="flex h-screen bg-background">
+        <Sidebar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Header />
+          <main className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                  <p className="text-muted-foreground">Bem-vindo ao seu painel de controle.</p>
+                </div>
+                <Link href="/os/new">
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nova OS
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat) => (
+                  <Link key={stat.title} href={stat.href}>
+                    <Card className="transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          {stat.title}
+                        </CardTitle>
+                        <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold">{stat.value}</div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Recent Orders */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ordens de Serviço Recentes</CardTitle>
+                  <CardDescription>Últimas OS cadastradas no sistema</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {recentOrders.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Nenhuma ordem de serviço encontrada.</p>
+                      <Link href="/os/new" className="mt-4">
+                        <Button variant="outline">Criar Primeira OS</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentOrders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                              #{order.orderNumber}
+                            </div>
+                            <div>
+                              <p className="font-medium">{order.customer.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(order.createdAt).toLocaleDateString("pt-BR")}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant={statusLabels[order.status]?.variant ?? "default"}>
+                            {statusLabels[order.status]?.label ?? order.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </main>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </Providers>
   );
 }
