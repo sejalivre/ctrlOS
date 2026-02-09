@@ -303,6 +303,20 @@ model ActivityLog {
   @@index([createdAt])
 }
 
+model SystemSettings {
+  id              String   @id @default("global")
+  companyName    String   @default("Minha Assistência")
+  companyLogo    String?
+  companyPhone   String?
+  companyEmail   String?
+  companyAddress String?
+  companyDocument String?
+  currency        String   @default("BRL")
+  footerText      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 enum Role {
   ADMIN
   TECHNICIAN
