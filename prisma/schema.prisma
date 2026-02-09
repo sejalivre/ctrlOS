@@ -1,0 +1,404 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// User (técnicos e administradores)
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  role          Role      @default(TECHNICIAN) // ADMIN, TECHNICIAN, RECEPTIONIST
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relações
+  serviceOrders ServiceOrder[] // OS atribuídas
+  sales         Sale[]         // Vendas realizadas
+  accounts      Account[]
+  sessions      Session[]
+}
+
+enum Role {
+  ADMIN
+  TECHNICIAN
+  RECEPTIONIST
+}
+
+// NextAuth Models required for Prisma Adapter
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Cliente
+model Customer {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   // Telefone principal
+  whatsapp    String?  // WhatsApp (pode ser igual ao phone)
+  email       String?
+  document    String?  // CPF/CNPJ
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  notes       String?  // Observações gerais
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relações
+  serviceOrders ServiceOrder[]
+  budgets       Budget[]
+  sales         Sale[]
+  
+  @@index([phone])
+  @@index([name])
+}
+
+// Produto (estoque)
+model Product {
+  id          String   @id @default(cuid())
+  code        String   @unique @default(uuid()) // Código automático
+  name        String
+  description String?
+  supplierId  String?
+  costPrice   Decimal  @db.Decimal(10, 2)  // Preço de compra
+  salePrice   Decimal  @db.Decimal(10, 2)  // Preço de venda
+  profitMargin Decimal? @db.Decimal(5, 2)  // % de lucro (calculado)
+  stockQty    Int      @default(0)         // Quantidade em estoque
+  minStock    Int      @default(5)         // Estoque mínimo (alerta)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relações
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  orderItems  ServiceOrderItem[]
+  saleItems   SaleItem[]
+  budgetItems BudgetItem[]
+  
+  @@index([name])
+  @@index([stockQty])
+}
+
+// Serviço (mão de obra)
+model Service {
+  id          String   @id @default(cuid())
+  code        String   @unique @default(uuid())
+  name        String   // Ex: "Formatação", "Troca de Tela"
+  description String?
+  defaultPrice Decimal @db.Decimal(10, 2)
+  duration    Int?     // Tempo estimado em minutos
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relações
+  orderItems  ServiceOrderItem[]
+  saleItems   SaleItem[]
+  budgetItems BudgetItem[]
+}
+
+// Fornecedor
+model Supplier {
+  id      String    @id @default(cuid())
+  name    String
+  phone   String?
+  email   String?
+  document String?
+  products Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Ordem de Serviço (Entidade Central)
+model ServiceOrder {
+  id              String     @id @default(cuid())
+  orderNumber     Int        @unique @default(autoincrement()) // Usei autoincrement p/ facilitar no Postgres
+  customerId      String
+  technicianId    String?
+  status          OSStatus   @default(OPENED)
+  priority        Priority   @default(NORMAL)
+  
+  // Datas importantes
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  promisedDate    DateTime?  // Data prometida ao cliente
+  completedAt     DateTime?  // Data de conclusão
+  deliveredAt     DateTime?  // Data de entrega
+  
+  // Pagamento (integrado na OS)
+  totalAmount     Decimal    @db.Decimal(10, 2) @default(0)
+  paymentMethod   PaymentMethod?
+  paid            Boolean    @default(false)
+  paidAt          DateTime?
+  
+  // Campos técnicos
+  entryQueue      Int?       // Número na fila de entrada (triagem)
+  entryPhotos     String[]   // URLs das fotos no Supabase Storage
+  exitPhotos      String[]   // Fotos na saída (evidência)
+  customerSignature String?  // Base64 da assinatura digital
+  
+  // Relações
+  customer        Customer   @relation(fields: [customerId], references: [id])
+  technician      User?      @relation(fields: [technicianId], references: [id])
+  equipments      Equipment[]
+  items           ServiceOrderItem[]
+  financialRecords FinancialRecord[]
+  
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([technicianId])
+}
+
+enum OSStatus {
+  OPENED           // Recém aberta, aguardando triagem
+  IN_QUEUE         // Na fila, aguardando técnico
+  IN_PROGRESS      // Técnico trabalhando
+  AWAITING_PARTS   // Aguardando peças/aprovação
+  READY            // Pronta para retirada
+  DELIVERED        // Entregue ao cliente
+  CANCELLED        // Cancelada
+  WARRANTY_RETURN  // Retorno em garantia
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum PaymentMethod {
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  PIX
+  BANK_TRANSFER
+  PROMISSORY_NOTE  // Fiado
+}
+
+// Equipamentos (1 OS pode ter N equipamentos)
+model Equipment {
+  id              String   @id @default(cuid())
+  serviceOrderId  String
+  type            String   // Ex: Notebook, Desktop, Celular
+  brand           String?
+  model           String?
+  serialNumber    String?
+  reportedIssue   String   // Problema relatado pelo cliente
+  diagnosis       String?  // Diagnóstico técnico
+  solution        String?  // Solução aplicada
+  
+  // Garantia
+  warrantyDays    Int?     @default(30)
+  warrantyExpires DateTime?
+  
+  // Acessórios
+  accessories     String?  // Ex: "Carregador, Mouse"
+  observations    String?  // Observações gerais
+  
+  // Relação
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([serviceOrderId])
+}
+
+// Itens da OS (produtos e serviços)
+model ServiceOrderItem {
+  id              String   @id @default(cuid())
+  serviceOrderId  String
+  
+  // Pode ser produto OU serviço
+  productId       String?
+  serviceId       String?
+  
+  description     String   // Nome do item no momento da venda
+  quantity        Int      @default(1)
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  totalPrice      Decimal  @db.Decimal(10, 2)
+  
+  // Relações
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  product         Product?     @relation(fields: [productId], references: [id])
+  service         Service?     @relation(fields: [serviceId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([serviceOrderId])
+}
+
+// Orçamentos
+model Budget {
+  id              String   @id @default(cuid())
+  budgetNumber    String   @unique
+  customerId      String
+  status          BudgetStatus @default(PENDING)
+  validUntil      DateTime
+  totalAmount     Decimal  @db.Decimal(10, 2)
+  notes           String?
+  
+  // Se aprovado, pode virar OS
+  convertedToOSId String?  @unique
+  
+  customer        Customer @relation(fields: [customerId], references: [id])
+  items           BudgetItem[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([customerId])
+  @@index([status])
+}
+
+enum BudgetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model BudgetItem {
+  id          String   @id @default(cuid())
+  budgetId    String
+  productId   String?
+  serviceId   String?
+  description String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  totalPrice  Decimal  @db.Decimal(10, 2)
+  
+  budget      Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+  service     Service? @relation(fields: [serviceId], references: [id])
+  
+  @@index([budgetId])
+}
+
+// Vendas Diretas (sem OS)
+model Sale {
+  id            String   @id @default(cuid())
+  saleNumber    String   @unique
+  customerId    String?  // Opcional (venda balcão)
+  sellerId      String   // Usuário que fez a venda
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  paid          Boolean  @default(true)
+  
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  seller        User      @relation(fields: [sellerId], references: [id])
+  items         SaleItem[]
+  financialRecords FinancialRecord[]
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([customerId])
+  @@index([sellerId])
+  @@index([createdAt])
+}
+
+model SaleItem {
+  id          String   @id @default(cuid())
+  saleId      String
+  productId   String?
+  serviceId   String?
+  description String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  totalPrice  Decimal  @db.Decimal(10, 2)
+  
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+  service     Service? @relation(fields: [serviceId], references: [id])
+  
+  @@index([saleId])
+}
+
+// Registros Financeiros (receitas e despesas)
+model FinancialRecord {
+  id              String   @id @default(cuid())
+  type            FinancialType
+  category        String   // Ex: Venda, Aluguel, Fornecedor
+  description     String
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod?
+  paid            Boolean  @default(false)
+  
+  // Referências opcionais
+  serviceOrderId  String?
+  saleId          String?
+  
+  serviceOrder    ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+  sale            Sale?         @relation(fields: [saleId], references: [id])
+  
+  dueDate         DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  
+  @@index([type])
+  @@index([createdAt])
+  @@index([paid])
+}
+
+enum FinancialType {
+  INCOME    // Receita
+  EXPENSE   // Despesa
+}
+
+// Logs de Atividades (auditoria)
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String   // Ex: "created_os", "updated_status"
+  entityType  String   // Ex: "ServiceOrder", "Customer"
+  entityId    String
+  changes     Json?    // Mudanças realizadas
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
