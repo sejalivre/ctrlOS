@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 // GET - Get single customer
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const customer = await prisma.customer.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!customer) {
@@ -31,13 +32,14 @@ export async function GET(
 // PATCH - Update customer
 export async function PATCH(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await request.json();
 
         const customer = await prisma.customer.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 name: body.name,
                 phone: body.phone,
@@ -65,11 +67,12 @@ export async function PATCH(
 // DELETE - Delete customer
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         await prisma.customer.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ message: "Cliente excluído com sucesso" });

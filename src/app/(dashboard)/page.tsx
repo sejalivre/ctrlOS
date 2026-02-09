@@ -125,7 +125,7 @@ export default async function DashboardPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {recentOrders.map((order: ServiceOrder & { customer: Customer }) => (
+                            {recentOrders.map((order: any) => (
                                 <div
                                     key={order.id}
                                     className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
