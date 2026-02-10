@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCurrentUserFromDatabase } from "@/lib/auth-helpers";
 
 export const dynamic = 'force-dynamic';
 
 // GET - List sales
 export async function GET(request: Request) {
     try {
+        const user = await getCurrentUserFromDatabase();
+        if (!user) {
+            return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const query = searchParams.get("q") ?? "";
 
@@ -38,8 +42,8 @@ export async function GET(request: Request) {
 // POST - Create sale
 export async function POST(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const user = await getCurrentUserFromDatabase();
+        if (!user) {
             return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
         }
 
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
                 data: {
                     saleNumber,
                     customerId: body.customerId || null,
-                    sellerId: session.user.id,
+                    sellerId: user.id, // Usar o ID do usuário do nosso banco
                     totalAmount,
                     paymentMethod: body.paymentMethod || "CASH",
                     paid: body.paid ?? true,

@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ServiceOrder, Customer, OSStatus } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +9,7 @@ import { ClipboardList, Users, Package, DollarSign, Plus } from "lucide-react";
 import { Providers } from "@/components/Providers";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { getCurrentUserFromDatabase, syncUserWithDatabase } from "@/lib/auth-helpers";
 
 async function getStats() {
   const [
@@ -35,10 +34,11 @@ async function getStats() {
 }
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions);
+  // Sincroniza usuário do Supabase Auth com nosso banco
+  const user = await syncUserWithDatabase();
 
   // Se não autenticado, redireciona para login
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
