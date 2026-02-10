@@ -6,6 +6,7 @@ Este diretório contém a documentação técnica detalhada de todas as funciona
 
 | Feature | Versão | Status | Documentação |
 |---------|--------|--------|--------------|
+| **Sistema de Autenticação** | 2.0.0 | ✅ Completo | [Link](./authentication.md) |
 | **Gestão de Clientes** | 1.0.0 | ✅ Completo | [Link](./customer-management.md) |
 | **Ordens de Serviço (OS)** | 1.0.0 | ✅ Completo | [Link](./service-orders.md) |
 | **Produtos & Estoque** | 1.0.0 | ✅ Completo | [Link](./product-inventory.md) |
@@ -17,4 +18,4 @@ Este diretório contém a documentação técnica detalhada de todas as funciona
 | **Configurações do Sistema** | 1.0.0 | ✅ Completo | [Link](./system-settings.md) |
 
 ---
-*Atualizado em: Fevereiro 2026*
+*Atualizado em: 10 de Fevereiro de 2026*

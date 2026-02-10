@@ -15,7 +15,7 @@ Este documento combina os padrões de desenvolvimento SaaS com especificações 
 - Vendas de produtos e serviços
 - Automação de comunicação (WhatsApp)
 - Relatórios gerenciais simples mas eficazes
-- Autenticação segura com Google OAuth e RBAC
+- Autenticação segura com Supabase Auth (email/senha) e RBAC
 
 ## 🔗 LINKS DO PROJETO
 
@@ -33,7 +33,7 @@ Este documento combina os padrões de desenvolvimento SaaS com especificações 
 - **Linguagem:** TypeScript (strict mode)
 - **Banco de Dados:** PostgreSQL via Supabase
 - **ORM:** Prisma 6+ (com Prisma Studio para administração)
-- **Autenticação:** NextAuth.js v5 (Auth.js) com Google Provider
+- **Autenticação:** Supabase Auth (email/senha) com RBAC
 - **UI/UX:** Tailwind CSS + shadcn/ui + Lucide React
 - **Formulários:** React Hook Form + Zod (validação)
 - **PDF:** @react-pdf/renderer (impressão de OS)
@@ -56,18 +56,22 @@ generator client {
 }
 ```
 
-### Erro: OAuthCreateAccount (Google Login)
-**Sintoma:** Após escolher a conta do Google, o usuário é redirecionado com `error=OAuthCreateAccount`.
-**Causa:** O modelo `User` no banco de dados não possuía os campos `image` e `emailVerified`, exigidos pelo adaptador do Prisma para o NextAuth.
-**Solução:** Adicionar os campos ao `schema.prisma` e sincronizar o banco:
-```prisma
-model User {
-  // ... outros campos
-  emailVerified DateTime?
-  image         String?
-}
+### Erro: Supabase Auth - Variáveis de Ambiente Não Configuradas
+**Sintoma:** Erro durante o build: `@supabase/ssr: Your project's URL and API key are required to create a Supabase client!`
+**Causa:** As variáveis de ambiente `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` não estão configuradas.
+**Solução:** Configurar as variáveis de ambiente no arquivo `.env.local` (desenvolvimento) ou na Vercel (produção):
+```bash
+NEXT_PUBLIC_SUPABASE_URL="https://seu-projeto.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="sua-chave-anon-aqui"
 ```
-Comando: `npx prisma db push`
+
+### Erro: Sincronização de Usuário - authId Não Encontrado
+**Sintoma:** Erro no build: `Property 'authId' does not exist in type 'UserWhereUniqueInput'`
+**Causa:** O Prisma Client não foi regenerado após atualização do schema.
+**Solução:** Regenerar o Prisma Client:
+```bash
+npx prisma generate
+```
 
 ### Erro: Incompatibilidade Prisma 7 + Node.js (Vercel/Build)
 **Sintoma:** O build falha ou o cliente Prisma tenta usar o motor WASM e trava.
@@ -109,7 +113,9 @@ techassist-pro/
 │   │   └── whatsapp/         # Integração WhatsApp
 │   ├── lib/
 │   │   ├── prisma.ts         # Cliente Prisma singleton
-│   │   ├── auth.ts           # Configuração NextAuth
+│   │   ├── supabase.ts       # Cliente Supabase (browser)
+│   │   ├── supabase-server.ts # Cliente Supabase (server)
+│   │   ├── auth-helpers.ts   # Helpers de autenticação
 │   │   ├── storage.ts        # Supabase Storage helper
 │   │   └── utils.ts          # Funções utilitárias
 │   ├── hooks/                # Custom React hooks
@@ -599,7 +605,7 @@ model ActivityLog {
 - [ ] Configurar Prisma + Supabase (criar projeto, obter credenciais)
 - [ ] Definir schema.prisma completo (todas as entidades)
 - [ ] Rodar primeira migração (`prisma migrate dev`)
-- [ ] Configurar NextAuth.js com Google Provider
+- [ ] Configurar Supabase Auth (email/senha)
 - [ ] Criar layout base (sidebar navegação, header)
 - [ ] Deploy inicial na Vercel (verificar build OK)
 - [ ] **Documentar setup em `/docs/guides/setup.md`**
@@ -1131,8 +1137,8 @@ npx prisma migrate deploy
 
 - **shadcn/ui:** https://ui.shadcn.com (componentes base)
 - **Prisma:** https://prisma.io/docs (ORM)
-- **Supabase:** https://supabase.com/docs (BaaS)
-- **NextAuth:** https://authjs.dev (Autenticação)
+- **Supabase:** https://supabase.com/docs (BaaS + Auth)
+- **Supabase Auth:** https://supabase.com/docs/guides/auth (Autenticação)
 - **react-pdf:** https://react-pdf.org (PDFs)
 - **Lucide Icons:** https://lucide.dev (Ícones)
 - **Next.js 14:** https://nextjs.org/docs
