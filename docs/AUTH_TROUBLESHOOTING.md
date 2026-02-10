@@ -121,6 +121,8 @@ Acesse: `https://os.hpinfo.com.br/login-debug`
 - [ ] `NEXT_PUBLIC_SUPABASE_URL` correto
 - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` correto
 - [ ] `NEXT_PUBLIC_SITE_URL`: `https://os.hpinfo.com.br`
+- [ ] `DATABASE_URL` usando porta 6543 (Pooler) e `?pgbouncer=true`
+- [ ] `DIRECT_URL` usando porta 5432
 
 ### ✅ **Código:**
 - [ ] Página `/auth/callback` existe
