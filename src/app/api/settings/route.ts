@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getCurrentUserFromDatabase } from "@/lib/auth-helpers";
 
 export async function GET() {
     try {
+        const user = await getCurrentUserFromDatabase();
+        if (!user) {
+            return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+        }
+
         const settings = await prisma.systemSettings.findUnique({
             where: { id: "global" }
         });
@@ -26,8 +30,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        if ((session?.user as any)?.role !== "ADMIN") {
+        const user = await getCurrentUserFromDatabase();
+        if (!user || user.role !== "ADMIN") {
             return NextResponse.json({ error: "Apenas administradores podem alterar configurações" }, { status: 403 });
         }
 

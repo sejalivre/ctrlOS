@@ -1,6 +1,7 @@
 "use client";
 
-import { signOut, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -12,16 +13,48 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Settings } from "lucide-react";
+import { createClient } from "@/lib/supabase";
 
 export function Header() {
-    const { data: session } = useSession();
+    const router = useRouter();
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    const initials = session?.user?.name
+    useEffect(() => {
+        const getUser = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+            setLoading(false);
+        };
+
+        getUser();
+    }, []);
+
+    const handleSignOut = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push("/login");
+        router.refresh();
+    };
+
+    const initials = (user?.user_metadata?.full_name || user?.email
         ?.split(" ")
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .toUpperCase()
-        .slice(0, 2) ?? "U";
+        .slice(0, 2)) ?? "U";
+
+    if (loading) {
+        return (
+            <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+                <div>
+                    <h1 className="text-lg font-semibold">TechAssist Pro</h1>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+            </header>
+        );
+    }
 
     return (
         <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
@@ -34,7 +67,7 @@ export function Header() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={session?.user?.image ?? ""} alt={session?.user?.name ?? ""} />
+                                <AvatarImage src={user?.user_metadata?.avatar_url ?? ""} alt={user?.user_metadata?.full_name ?? user?.email ?? ""} />
                                 <AvatarFallback>{initials}</AvatarFallback>
                             </Avatar>
                         </Button>
@@ -42,9 +75,11 @@ export function Header() {
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{session?.user?.name}</p>
+                                <p className="text-sm font-medium leading-none">
+                                    {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário'}
+                                </p>
                                 <p className="text-xs leading-none text-muted-foreground">
-                                    {session?.user?.email}
+                                    {user?.email}
                                 </p>
                             </div>
                         </DropdownMenuLabel>
@@ -58,7 +93,7 @@ export function Header() {
                             <span>Configurações</span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+                        <DropdownMenuItem onClick={handleSignOut}>
                             <LogOut className="mr-2 h-4 w-4" />
                             <span>Sair</span>
                         </DropdownMenuItem>
