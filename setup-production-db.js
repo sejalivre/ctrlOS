@@ -35,9 +35,11 @@ if (missingVars.length > 0) {
   console.log('\n📋 Configure na Vercel:');
   console.log('   Settings → Environment Variables');
   console.log('\n📋 Valores necessários:');
-  console.log('   DATABASE_URL: postgresql://postgres:[SENHA]@db.zjapynvxybowjjzktxyd.supabase.co:5432/postgres?sslmode=require');
+  console.log('   DATABASE_URL: postgresql://postgres.[PROJECT-ID]:[SENHA]@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true');
+  console.log('   DIRECT_URL: postgresql://postgres:[SENHA]@db.zjapynvxybowjjzktxyd.supabase.co:5432/postgres');
   console.log('   NEXT_PUBLIC_SUPABASE_URL: https://zjapynvxybowjjzktxyd.supabase.co');
   console.log('   NEXT_PUBLIC_SUPABASE_ANON_KEY: sua-chave-anon');
+  console.log('   AUTH_SECRET: uma-string-aleatoria-de-32-caracteres');
   process.exit(1);
 }
 
