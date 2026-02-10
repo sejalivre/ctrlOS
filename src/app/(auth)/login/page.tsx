@@ -33,13 +33,23 @@ export default function LoginPage() {
             data: {
               full_name: email.split('@')[0],
             },
+            // Não redirecionar automaticamente - deixe o usuário fazer login manualmente
+            emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
           },
         });
 
         if (error) throw error;
 
-        if (data.user) {
-          // Redireciona após cadastro bem-sucedido
+        // Verificar se precisa de confirmação de email
+        if (data.user?.identities?.length === 0) {
+          // Email já cadastrado ou precisa de confirmação
+          setError("Este email já está cadastrado. Faça login ou use outro email.");
+        } else if (data.user && !data.session) {
+          // Cadastro bem-sucedido mas sem sessão (precisa confirmar email)
+          setError("Cadastro realizado! Verifique seu email para confirmar a conta antes de fazer login.");
+          setIsSignUp(false); // Volta para tela de login
+        } else if (data.session) {
+          // Cadastro com sessão automática (confirmação desabilitada)
           router.push("/");
           router.refresh();
         }
@@ -50,7 +60,16 @@ export default function LoginPage() {
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          // Tratar erros específicos
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error("Email ou senha incorretos");
+          } else if (error.message.includes('Email not confirmed')) {
+            throw new Error("Email não confirmado. Verifique sua caixa de entrada.");
+          } else {
+            throw error;
+          }
+        }
 
         if (data.user) {
           router.push("/");
