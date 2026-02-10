@@ -25,17 +25,20 @@ No **Supabase Dashboard** do seu projeto:
 No arquivo `.env.local` (crie se não existir):
 
 ```bash
-# Banco de Dados
-DATABASE_URL="file:./dev.db"
+# Banco de Dados (Prisma)
+# DATABASE_URL: Use o Hostname do Pooler (porta 6543) com ?pgbouncer=true
+DATABASE_URL="postgresql://postgres.[PROJECT-ID]:[PASSWORD]@[POOLER-HOST]:6543/postgres?pgbouncer=true"
 
-# Supabase Auth (SUBSTITUA COM SUAS CREDENCIAIS)
-NEXT_PUBLIC_SUPABASE_URL="https://seu-projeto-id.supabase.co"
+# DIRECT_URL: Use o Hostname Direto (porta 5432)
+DIRECT_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT-ID].supabase.co:5432/postgres"
+
+# Supabase Auth
+NEXT_PUBLIC_SUPABASE_URL="https://[PROJECT-ID].supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="sua-chave-anon-aqui"
 
 # URL da aplicação
 NEXT_PUBLIC_SITE_URL="http://localhost:3000"
-
-# Ambiente
+AUTH_SECRET="uma-string-aleatoria-32-chars"
 NODE_ENV="development"
 ```
 
@@ -170,13 +173,19 @@ Habilitado por padrão:
 ## 🚀 Produção
 
 ### 1. **Variáveis de Ambiente (Vercel)**
-No painel da Vercel:
-```
-NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
-NEXT_PUBLIC_SITE_URL=https://seu-dominio.com
-DATABASE_URL=postgresql://...
-```
+No painel da Vercel, configure as variáveis essenciais. **IMPORTANTE:** Para o Vercel, você DEVE usar o Connection Pooler.
+
+| Variável | Valor / Formato |
+| :--- | :--- |
+| `DATABASE_URL` | `postgresql://postgres.[ID]:[SENHA]@[POOLER-HOST]:6543/postgres?pgbouncer=true` |
+| `DIRECT_URL` | `postgresql://postgres:[SENHA]@db.[ID].supabase.co:5432/postgres` |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://[ID].supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sua anon key |
+| `AUTH_SECRET` | Uma string aleatória segura |
+| `NEXTAUTH_URL` | `https://seu-dominio.com` |
+
+> [!TIP]
+> O **POOLER-HOST** é encontrado no Supabase em Settings -> Database -> Connection Pooler. Geralmente termina em `.pooler.supabase.com`.
 
 ### 2. **URLs de Produção**
 No Supabase Dashboard:

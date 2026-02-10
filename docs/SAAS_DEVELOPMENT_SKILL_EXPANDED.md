@@ -79,6 +79,14 @@ npx prisma generate
 Comando: `npm install prisma@6 @prisma/client@6`
 Script Adicional: Adicionar `"postinstall": "prisma generate"` no `package.json` para garantir a geração na Vercel.
 
+### Erro: Can't reach database server at ...:5432 (Vercel)
+**Sintoma:** O sistema funciona localmente, mas falha no deploy com erro de rede na porta 5432.
+**Causa:** O Vercel (Serverless) abre muitas conexões rápidas que esgotam o limite do PostgreSQL ou são bloqueadas.
+**Solução:** 
+1. Use o **Connection Pooler** do Supabase na porta **6543**.
+2. Configure `DATABASE_URL` com o hostname do pooler e `?pgbouncer=true`.
+3. Configure `DIRECT_URL` com a porta 5432 para migrations através do hostname direto (`db.[ID].supabase.co`).
+
 ### Estrutura de Pastas TechAssist Pro
 ```
 techassist-pro/
