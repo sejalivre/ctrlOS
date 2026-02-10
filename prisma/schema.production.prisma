@@ -1,0 +1,223 @@
+// Schema para produção (PostgreSQL no Supabase)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Para Supabase, use SSL
+  directUrl = env("DIRECT_URL")
+}
+
+// Modelos (mesmo do schema principal)
+model User {
+  id            String         @id @default(cuid())
+  authId        String         @unique
+  name          String
+  email         String         @unique
+  role          Role           @default(TECHNICIAN)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relações
+  sales         Sale[]
+  serviceOrders ServiceOrder[]
+  
+  @@map("users")
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  name          String
+  email         String?
+  phone         String?
+  document      String?
+  address       String?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relações
+  sales         Sale[]
+  serviceOrders ServiceOrder[]
+  
+  @@map("customers")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sku         String?  @unique
+  price       Float    @default(0)
+  cost        Float    @default(0)
+  stockQty    Int      @default(0)
+  minStock    Int      @default(5)
+  category    String?
+  brand       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relações
+  saleItems   SaleItem[]
+  
+  @@map("products")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float    @default(0)
+  duration    Int?     // em minutos
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relações
+  saleItems   SaleItem[]
+  
+  @@map("services")
+}
+
+model Sale {
+  id            String     @id @default(cuid())
+  saleNumber    String     @unique
+  customerId    String?
+  sellerId      String
+  totalAmount   Float      @default(0)
+  paymentMethod PaymentMethod @default(CASH)
+  paid          Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  
+  // Relações
+  customer      Customer?  @relation(fields: [customerId], references: [id])
+  seller        User       @relation(fields: [sellerId], references: [id])
+  items         SaleItem[]
+  financialRecord FinancialRecord?
+  
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String   @id @default(cuid())
+  saleId      String
+  productId   String?
+  serviceId   String?
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float    @default(0)
+  totalPrice  Float    @default(0)
+  createdAt   DateTime @default(now())
+  
+  // Relações
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+  service     Service? @relation(fields: [serviceId], references: [id])
+  
+  @@map("sale_items")
+}
+
+model ServiceOrder {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  customerId    String?
+  technicianId  String?
+  device        String
+  brand         String?
+  model         String?
+  serialNumber  String?
+  problem       String
+  diagnosis     String?
+  status        OSStatus      @default(PENDING)
+  priority      Priority      @default(MEDIUM)
+  estimatedCost Float?        @default(0)
+  finalCost     Float?        @default(0)
+  estimatedTime Int?          // em minutos
+  completedAt   DateTime?
+  deliveredAt   DateTime?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relações
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  technician    User?         @relation(fields: [technicianId], references: [id])
+  
+  @@map("service_orders")
+}
+
+model FinancialRecord {
+  id            String          @id @default(cuid())
+  type          FinancialType
+  category      String
+  description   String
+  amount        Float           @default(0)
+  paymentMethod PaymentMethod   @default(CASH)
+  paidAt        DateTime?
+  saleId        String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relações
+  sale          Sale?           @relation(fields: [saleId], references: [id])
+  
+  @@map("financial_records")
+}
+
+model SystemSettings {
+  id              String   @id @default("global")
+  companyName     String?  @default("TechAssist Pro")
+  companyLogo     String?
+  companyPhone    String?
+  companyEmail    String?
+  companyAddress  String?
+  companyDocument String?
+  currency        String?  @default("BRL")
+  footerText      String?  @default("Sistema de gestão para assistências técnicas")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("system_settings")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  TECHNICIAN
+  RECEPTIONIST
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  BANK_TRANSFER
+  OTHER
+}
+
+enum OSStatus {
+  PENDING
+  IN_PROGRESS
+  WAITING_PARTS
+  COMPLETED
+  DELIVERED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum FinancialType {
+  INCOME
+  EXPENSE
+}

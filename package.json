@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:setup": "node setup-production-db.js",
+    "auth:test": "node test-auth.js",
+    "auth:diagnose": "node diagnose-auth.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
