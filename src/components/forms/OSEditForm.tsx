@@ -23,6 +23,7 @@ interface OSEditFormProps {
 export default function OSEditForm({ orderId, initialData, onSuccess }: OSEditFormProps) {
     const [isSaving, setIsSaving] = useState(false);
     const [technicians, setTechnicians] = useState<any[]>([]);
+    const [warrantyTerms, setWarrantyTerms] = useState<any[]>([]);
 
     useState(() => {
         const fetchTechnicians = async () => {
@@ -34,7 +35,19 @@ export default function OSEditForm({ orderId, initialData, onSuccess }: OSEditFo
                 console.error("Error fetching technicians:", error);
             }
         };
+
+        const fetchWarrantyTerms = async () => {
+            try {
+                const response = await fetch("/api/warranty-terms");
+                const data = await response.json();
+                setWarrantyTerms(data.terms || []);
+            } catch (error) {
+                console.error("Error fetching warranty terms:", error);
+            }
+        };
+
         fetchTechnicians();
+        fetchWarrantyTerms();
     });
 
     const form = useForm<ServiceOrderFormData>({
@@ -58,6 +71,7 @@ export default function OSEditForm({ orderId, initialData, onSuccess }: OSEditFo
                 diagnosis: "",
                 solution: "",
             }],
+            warrantyTerms: initialData.warrantyTerms || "",
         } : {
             customerId: "",
             priority: "NORMAL",
@@ -69,6 +83,7 @@ export default function OSEditForm({ orderId, initialData, onSuccess }: OSEditFo
                 diagnosis: "",
                 solution: "",
             }],
+            warrantyTerms: "",
         },
     });
 
@@ -83,6 +98,7 @@ export default function OSEditForm({ orderId, initialData, onSuccess }: OSEditFo
                     technicianId: data.technicianId || null,
                     priority: data.priority,
                     equipments: data.equipments,
+                    warrantyTerms: data.warrantyTerms,
                 }),
             });
 
@@ -219,6 +235,37 @@ export default function OSEditForm({ orderId, initialData, onSuccess }: OSEditFo
                                 />
                             </div>
                         </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Garantia */}
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-medium">Termos de Garantia</h3>
+                            <div className="w-64">
+                                <Select onValueChange={(val) => {
+                                    const term = warrantyTerms.find(t => t.id === val);
+                                    if (term) form.setValue("warrantyTerms", term.content);
+                                }}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Escolher termo pronto..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {warrantyTerms.map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <Textarea
+                            {...form.register("warrantyTerms")}
+                            placeholder="Texto da garantia que aparecerá na OS"
+                            className="min-h-[120px]"
+                        />
                     </div>
                 </CardContent>
             </Card>

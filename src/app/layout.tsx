@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
@@ -51,3 +52,4 @@ export default function RootLayout({
     </html>
   );
 }
+

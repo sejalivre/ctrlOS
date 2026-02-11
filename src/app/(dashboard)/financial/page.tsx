@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -117,3 +118,4 @@ export default function FinancialPage() {
         </div>
     );
 }
+

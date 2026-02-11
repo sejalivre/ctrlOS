@@ -44,6 +44,7 @@ export const serviceOrderSchema = z.object({
     items: z.array(serviceOrderItemSchema).optional(),
     totalAmount: z.number().optional(),
     paymentMethod: z.string().optional(),
+    warrantyTerms: z.string().optional().nullable(),
 });
 
 export type ServiceOrderFormData = z.infer<typeof serviceOrderSchema>;

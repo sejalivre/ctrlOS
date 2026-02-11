@@ -1,3 +1,4 @@
+/* Verification: 2026-02-11 18:34:21 */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -124,3 +125,4 @@
     @apply bg-background text-foreground;
   }
 }
+

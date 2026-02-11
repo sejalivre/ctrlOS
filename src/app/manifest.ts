@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -18,3 +19,4 @@ export default function manifest(): MetadataRoute.Manifest {
         ],
     };
 }
+

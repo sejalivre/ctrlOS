@@ -56,6 +56,7 @@ export async function PATCH(
                 paymentMethod: body.paymentMethod || undefined,
                 paid: body.paid !== undefined ? body.paid : undefined,
                 paidAt: body.paid ? new Date() : (body.paid === false ? null : undefined),
+                warrantyTerms: body.warrantyTerms !== undefined ? body.warrantyTerms : undefined,
             },
         });
 
@@ -153,6 +154,7 @@ export async function PUT(
                     paymentMethod: paymentMethod || null,
                     paid: body.paid ?? false,
                     paidAt: body.paid ? new Date() : null,
+                    warrantyTerms: body.warrantyTerms || null,
                 },
             });
 

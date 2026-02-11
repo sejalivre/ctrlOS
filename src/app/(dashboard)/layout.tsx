@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
@@ -27,3 +28,4 @@ export default async function DashboardLayout({
         </Providers>
     );
 }
+
