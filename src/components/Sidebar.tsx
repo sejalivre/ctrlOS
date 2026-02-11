@@ -18,6 +18,7 @@ import {
 
 const navItems = [
     { href: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/os/dashboard", icon: BarChart3, label: "Dashboard OS" },
     { href: "/os", icon: ClipboardList, label: "Ordens de Serviço" },
     { href: "/customers", icon: Users, label: "Clientes" },
     { href: "/products", icon: Package, label: "Produtos" },

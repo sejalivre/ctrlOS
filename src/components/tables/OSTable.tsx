@@ -13,6 +13,7 @@ import { OSStatusBadge } from "@/components/ui/os-status-badge";
 import { Eye, MapPin, Calendar, User, Edit } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { OSActions } from "./OSActions";
 
 interface ServiceOrder {
     id: string;
@@ -87,17 +88,7 @@ export function OSTable({ orders }: OSTableProps) {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/os/${order.id}`}>
-                                                <Eye className="h-4 w-4 mr-2" />
-                                                Ver Detalhes
-                                            </Link>
-                                        </Button>
-                                        <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/os/${order.id}/edit`}>
-                                                <Edit className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
+                                        <OSActions order={order} />
                                     </div>
                                 </TableCell>
                             </TableRow>

@@ -147,6 +147,11 @@ model ServiceOrder {
   completedAt       DateTime?
   deliveredAt       DateTime?
   totalAmount       Float              @default(0)
+  productsAmount    Float              @default(0)
+  servicesAmount    Float              @default(0)
+  freightAmount     Float              @default(0)
+  othersAmount      Float              @default(0)
+  discountAmount    Float              @default(0)
   paymentMethod     PaymentMethod?
   paid              Boolean            @default(false)
   paidAt            DateTime?

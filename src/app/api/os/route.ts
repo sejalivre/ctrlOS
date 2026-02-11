@@ -29,6 +29,7 @@ export async function GET(request: Request) {
                 include: {
                     customer: { select: { name: true, phone: true } },
                     equipments: true,
+                    financialRecords: { select: { id: true, type: true } },
                 },
                 orderBy: { createdAt: "desc" },
                 skip: (page - 1) * limit,
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
             orderBy: { orderNumber: 'desc' },
             select: { orderNumber: true }
         });
-        
+
         const orderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1000;
 
         const order = await prisma.serviceOrder.create({

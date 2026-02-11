@@ -203,13 +203,16 @@ export default function OSDetailsPage() {
                         </Card>
                     ))}
 
-                    {/* Placeholder para Itens/Financeiro */}
-                    <Card className="border-dashed">
-                        <CardContent className="py-10 text-center text-muted-foreground">
-                            <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                            <p>Funcionalidade de Itens e Financeiro em breve...</p>
-                        </CardContent>
-                    </Card>
+                    {/* Itens da OS */}
+                    <OSItemsSection
+                        serviceOrderId={params.id as string}
+                        initialData={{
+                            freightAmount: order.freightAmount || 0,
+                            othersAmount: order.othersAmount || 0,
+                            discountAmount: order.discountAmount || 0,
+                        }}
+                        onTotalChange={(total) => setOrder((prev: any) => ({ ...prev, totalAmount: total }))}
+                    />
                 </div>
             </div>
         </div>
@@ -217,3 +220,4 @@ export default function OSDetailsPage() {
 }
 
 import { Wrench, DollarSign } from "lucide-react";
+import OSItemsSection from "@/components/forms/OSItemsSection";
