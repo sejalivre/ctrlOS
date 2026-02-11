@@ -19,12 +19,14 @@ interface OSFormProps {
 export function OSForm({ onSuccess }: OSFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
+    const [technicians, setTechnicians] = useState<{ id: string; name: string }[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
     const form = useForm<ServiceOrderFormData>({
         resolver: zodResolver(serviceOrderSchema),
         defaultValues: {
             customerId: "",
+            technicianId: "",
             priority: "NORMAL",
             status: "OPENED",
             equipments: [{
@@ -44,18 +46,25 @@ export function OSForm({ onSuccess }: OSFormProps) {
         name: "equipments",
     });
 
-    // Basic customer fetch (can be improved with search later)
+    // Basic customer and technician fetch
     useEffect(() => {
-        async function fetchCustomers() {
+        async function fetchData() {
             try {
-                const response = await fetch("/api/customers?limit=100");
-                const data = await response.json();
-                setCustomers(data.customers || []);
+                const [custRes, techRes] = await Promise.all([
+                    fetch("/api/customers?limit=100"),
+                    fetch("/api/users?role=TECHNICIAN&active=true")
+                ]);
+
+                const custData = await custRes.json();
+                const techData = await techRes.json();
+
+                setCustomers(custData.customers || []);
+                setTechnicians(techData.users || []);
             } catch (error) {
-                console.error("Error loading customers:", error);
+                console.error("Error loading data:", error);
             }
         }
-        fetchCustomers();
+        fetchData();
     }, []);
 
     async function onSubmit(data: ServiceOrderFormData) {
@@ -81,7 +90,7 @@ export function OSForm({ onSuccess }: OSFormProps) {
 
     return (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="customerId">Cliente *</Label>
                     <Select onValueChange={(val) => form.setValue("customerId", val)}>
@@ -99,6 +108,22 @@ export function OSForm({ onSuccess }: OSFormProps) {
                     {form.formState.errors.customerId && (
                         <p className="text-sm text-red-500">{form.formState.errors.customerId.message}</p>
                     )}
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="technicianId">Técnico Responsável</Label>
+                    <Select onValueChange={(val) => form.setValue("technicianId", val)}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione um técnico" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {technicians.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>
+                                    {t.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -173,6 +198,17 @@ export function OSForm({ onSuccess }: OSFormProps) {
                                 {form.formState.errors.equipments?.[index]?.reportedIssue && (
                                     <p className="text-sm text-red-500">{form.formState.errors.equipments[index]?.reportedIssue?.message}</p>
                                 )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Acessórios (Carregador, Cabos...)</Label>
+                                    <Input {...form.register(`equipments.${index}.accessories`)} placeholder="ex: Carregador, Cabo HDMI" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Condições (Arranhado, Quebrado...)</Label>
+                                    <Input {...form.register(`equipments.${index}.observations`)} placeholder="ex: Arranhado na tampa" />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

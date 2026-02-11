@@ -73,6 +73,7 @@ export async function POST(
                 description,
                 quantity,
                 unitPrice,
+                discount: Number(discount) || 0,
                 totalPrice,
             },
             include: {
@@ -110,33 +111,16 @@ export async function POST(
 
 // Helper function to update service order total
 async function updateServiceOrderTotal(serviceOrderId: string) {
-    const order = await prisma.serviceOrder.findUnique({
-        where: { id: serviceOrderId },
-        select: { freightAmount: true, othersAmount: true, discountAmount: true },
-    });
-
-    if (!order) return;
-
     const items = await prisma.serviceOrderItem.findMany({
         where: { serviceOrderId },
-        select: { totalPrice: true, productId: true, serviceId: true },
+        select: { totalPrice: true },
     });
 
-    const productsAmount = items
-        .filter((item) => item.productId)
-        .reduce((sum, item) => sum + item.totalPrice, 0);
-
-    const servicesAmount = items
-        .filter((item) => item.serviceId)
-        .reduce((sum, item) => sum + item.totalPrice, 0);
-
-    const totalAmount = (productsAmount + servicesAmount + order.freightAmount + order.othersAmount) - order.discountAmount;
+    const totalAmount = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
     await prisma.serviceOrder.update({
         where: { id: serviceOrderId },
         data: {
-            productsAmount,
-            servicesAmount,
             totalAmount
         },
     });

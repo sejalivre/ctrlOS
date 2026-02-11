@@ -34,6 +34,7 @@ export async function PATCH(
             where: { id: itemId },
             data: {
                 quantity,
+                discount,
                 totalPrice,
             },
             include: {

@@ -28,6 +28,7 @@ interface ServiceOrder {
         type: string;
         model?: string;
     }[];
+    totalAmount: number;
 }
 
 interface OSTableProps {
@@ -45,6 +46,7 @@ export function OSTable({ orders }: OSTableProps) {
                         <TableHead>Equipamento</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Data</TableHead>
+                        <TableHead>Total</TableHead>
                         <TableHead className="text-right">Ação</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -85,6 +87,11 @@ export function OSTable({ orders }: OSTableProps) {
                                         <Calendar className="h-3.5 w-3.5" />
                                         {format(new Date(order.createdAt), "dd/MM/yyyy")}
                                     </div>
+                                </TableCell>
+                                <TableCell>
+                                    <span className="font-bold text-slate-900">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.totalAmount || 0)}
+                                    </span>
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">

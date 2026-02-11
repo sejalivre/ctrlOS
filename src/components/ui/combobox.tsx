@@ -29,6 +29,7 @@ export interface ComboboxOption {
 interface ComboboxProps {
     options?: ComboboxOption[];
     value?: string;
+    valueLabel?: string; // Explicit label to show when value is set but not in current options
     onValueChange?: (value: string, option?: ComboboxOption) => void;
     placeholder?: string;
     searchPlaceholder?: string;
@@ -38,9 +39,12 @@ interface ComboboxProps {
     className?: string;
 }
 
+const EMPTY_ARRAY: any[] = [];
+
 export function Combobox({
-    options: staticOptions = [],
+    options: staticOptions = EMPTY_ARRAY,
     value,
+    valueLabel,
     onValueChange,
     placeholder = "Selecione...",
     searchPlaceholder = "Buscar...",
@@ -90,7 +94,7 @@ export function Combobox({
                     className={cn("w-full justify-between", className)}
                     disabled={disabled}
                 >
-                    {selectedOption ? selectedOption.label : placeholder}
+                    {selectedOption ? selectedOption.label : (value ? valueLabel || value : placeholder)}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
