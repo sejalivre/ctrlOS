@@ -2,13 +2,33 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // Validate environment variables
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error(
+      '⚠️  Missing Supabase environment variables!\n' +
+      'Please create a .env.local file with:\n' +
+      '  NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co\n' +
+      '  NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key\n' +
+      'See .env.example for a template.'
+    )
+
+    // In development, allow access without auth (for initial setup)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('🔓 Running in development mode without authentication')
+      return NextResponse.next({ request })
+    }
+
+    // In production, this is a critical error
+    throw new Error('Supabase configuration is required in production')
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -33,10 +53,10 @@ export async function middleware(request: NextRequest) {
   // Proteger rotas do dashboard
   const { data: { user } } = await supabase.auth.getUser()
   const isAuthPage = request.nextUrl.pathname.startsWith('/login')
-  const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard') || 
-                         (request.nextUrl.pathname.startsWith('/') && 
-                          !request.nextUrl.pathname.startsWith('/login') &&
-                          !request.nextUrl.pathname.startsWith('/api/auth'))
+  const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard') ||
+    (request.nextUrl.pathname.startsWith('/') &&
+      !request.nextUrl.pathname.startsWith('/login') &&
+      !request.nextUrl.pathname.startsWith('/api/auth'))
 
   // Se não está autenticado e tenta acessar dashboard, redireciona para login
   // Temporariamente desativado para testes

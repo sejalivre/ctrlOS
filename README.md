@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TechAssist Pro - Sistema de Gestão para Assistências Técnicas
 
-## Getting Started
+Sistema completo de gestão de ordens de serviço, clientes, produtos e financeiro para assistências técnicas de informática.
 
-First, run the development server:
+## 🚀 Tecnologias
+
+- **Framework:** Next.js 16 (App Router)
+- **Linguagem:** TypeScript
+- **Banco de Dados:** SQLite (dev) / PostgreSQL via Supabase (prod)
+- **ORM:** Prisma 6
+- **Autenticação:** Supabase Auth
+- **UI:** Tailwind CSS + shadcn/ui
+- **Formulários:** React Hook Form + Zod
+
+## 📋 Pré-requisitos
+
+- Node.js 18+ 
+- npm ou yarn
+- Conta no Supabase (para autenticação e produção)
+
+## ⚙️ Configuração Inicial
+
+### 1. Clone o repositório
+
+```bash
+git clone https://github.com/sejalivre/ctrlOS.git
+cd ctrlOS
+```
+
+### 2. Instale as dependências
+
+```bash
+npm install
+```
+
+### 3. Configure as variáveis de ambiente
+
+Crie um arquivo `.env.local` na raiz do projeto:
+
+```bash
+# Copie o template de exemplo
+cp .env.example .env.local
+```
+
+Edite `.env.local` e adicione suas credenciais do Supabase:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://zjapynvxybowjjzktxyd.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-aqui
+DATABASE_URL="file:./dev.db"
+```
+
+**Onde encontrar as credenciais:**
+- Acesse: https://supabase.com/dashboard/project/zjapynvxybowjjzktxyd/settings/api
+- Copie a **Project URL** e a **anon/public key**
+
+### 4. Configure o banco de dados
+
+```bash
+# Gera o Prisma Client
+npx prisma generate
+
+# Cria o banco de dados SQLite local
+npx prisma db push
+
+# (Opcional) Abra o Prisma Studio para visualizar os dados
+npx prisma studio
+```
+
+### 5. Execute o servidor de desenvolvimento
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📚 Documentação
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A documentação completa está disponível na pasta `/docs`:
 
-## Learn More
+- [SAAS_DEVELOPMENT_SKILL_EXPANDED.md](docs/SAAS_DEVELOPMENT_SKILL_EXPANDED.md) - Guia completo de desenvolvimento
+- [/docs/features](docs/features) - Documentação de funcionalidades
+- [/docs/guides](docs/guides) - Guias de setup e deployment
 
-To learn more about Next.js, take a look at the following resources:
+## 🔧 Solução de Problemas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Erro: "Missing Supabase environment variables"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Causa:** Variáveis de ambiente não configuradas.
 
-## Deploy on Vercel
+**Solução:** 
+1. Verifique se o arquivo `.env.local` existe na raiz do projeto
+2. Confirme que as variáveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` estão preenchidas
+3. Reinicie o servidor de desenvolvimento
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Erro: Prisma Client não encontrado
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Solução:**
+```bash
+npx prisma generate
+```
+
+### Banco de dados não sincronizado
+
+**Solução:**
+```bash
+npx prisma db push
+```
+
+## 🚢 Deploy
+
+### Vercel (Recomendado)
+
+1. Conecte seu repositório GitHub à Vercel
+2. Configure as variáveis de ambiente no painel da Vercel
+3. Deploy automático a cada push
+
+**Variáveis de ambiente necessárias na Vercel:**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `DATABASE_URL` (PostgreSQL do Supabase para produção)
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
+
+## 🔗 Links
+
+- **Repositório:** [github.com/sejalivre/ctrlOS](https://github.com/sejalivre/ctrlOS)
+- **Supabase Dashboard:** [zjapynvxybowjjzktxyd](https://supabase.com/dashboard/project/zjapynvxybowjjzktxyd)
+- **Deploy:** [os.hpinfo.com.br](https://os.hpinfo.com.br/)
+
