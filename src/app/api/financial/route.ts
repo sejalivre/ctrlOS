@@ -1,6 +1,40 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic';
+
+// GET - List financial records
+export async function GET(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const category = searchParams.get("category") ?? "";
+
+        const where = category
+            ? {
+                OR: [
+                    { description: { contains: category, mode: "insensitive" as const } },
+                ],
+            }
+            : {};
+
+        const records = await prisma.financialRecord.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+            include: {
+                customer: { select: { name: true } },
+            }
+        });
+
+        return NextResponse.json({ records });
+    } catch (error) {
+        console.error("Error fetching financial records:", error);
+        return NextResponse.json(
+            { error: "Erro ao buscar registros financeiros" },
+            { status: 500 }
+        );
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();

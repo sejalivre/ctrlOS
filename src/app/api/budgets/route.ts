@@ -19,7 +19,8 @@ export async function GET(request: Request) {
             include: {
                 customer: {
                     select: { name: true }
-                }
+                },
+                items: true
             },
             orderBy: { createdAt: "desc" },
         });
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
         // Generate simple budget number: BGT-timestamp
         const budgetNumber = `BGT-${Date.now()}`;
 
-        const totalAmount = body.items.reduce((acc: number, item: any) => acc + (item.totalPrice || 0), 0);
+        const totalAmount = body.items.reduce((acc: number, item: any) => acc + (Number(item.totalPrice) || 0), 0);
 
         const budget = await prisma.budget.create({
             data: {
@@ -56,9 +57,10 @@ export async function POST(request: Request) {
                         productId: item.productId || null,
                         serviceId: item.serviceId || null,
                         description: item.description,
-                        quantity: item.quantity,
-                        unitPrice: item.unitPrice,
-                        totalPrice: item.totalPrice,
+                        quantity: Number(item.quantity),
+                        unitPrice: Number(item.unitPrice),
+                        discount: Number(item.discount || 0),
+                        totalPrice: Number(item.totalPrice),
                     }))
                 }
             },
@@ -68,10 +70,10 @@ export async function POST(request: Request) {
         });
 
         return NextResponse.json({ budget }, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating budget:", error);
         return NextResponse.json(
-            { error: "Erro ao criar orçamento" },
+            { error: "Erro ao criar orçamento", details: error.message },
             { status: 500 }
         );
     }

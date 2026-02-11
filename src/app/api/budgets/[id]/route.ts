@@ -46,23 +46,54 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
 
-        // If we are updating items, it's more complex. For now, let's support status updates.
-        // A full update would require deleting items and re-creating them.
+        // Full update supported: status, details, and items (via delete & re-create)
 
         const updateData: any = {};
         if (body.status) updateData.status = body.status;
         if (body.notes !== undefined) updateData.notes = body.notes;
         if (body.validUntil) updateData.validUntil = new Date(body.validUntil);
+        if (body.customerId) updateData.customerId = body.customerId;
 
-        const budget = await prisma.budget.update({
-            where: { id },
-            data: updateData,
+        // Start a transaction to update everything
+        const budget = await prisma.$transaction(async (tx) => {
+            // Update items if provided
+            if (body.items) {
+                // Delete existing items
+                await tx.budgetItem.deleteMany({
+                    where: { budgetId: id }
+                });
+
+                // Create new items
+                await tx.budgetItem.createMany({
+                    data: body.items.map((item: any) => ({
+                        budgetId: id,
+                        productId: item.productId || null,
+                        serviceId: item.serviceId || null,
+                        description: item.description,
+                        quantity: Number(item.quantity),
+                        unitPrice: Number(item.unitPrice),
+                        discount: Number(item.discount || 0),
+                        totalPrice: Number(item.totalPrice),
+                    }))
+                });
+
+                // Calculate new total
+                updateData.totalAmount = body.items.reduce((acc: number, item: any) => acc + (Number(item.totalPrice) || 0), 0);
+            }
+
+            // Update budget
+            return await tx.budget.update({
+                where: { id },
+                data: updateData,
+                include: { items: true }
+            });
         });
 
         return NextResponse.json({ budget });
-    } catch (error) {
+    } catch (error: any) {
+        console.error("Error updating budget:", error);
         return NextResponse.json(
-            { error: "Erro ao atualizar orçamento" },
+            { error: "Erro ao atualizar orçamento", details: error.message },
             { status: 500 }
         );
     }

@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Package, Wrench } from "lucide-react";
@@ -46,6 +47,23 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
         name: "items",
     });
 
+    // Reset form when initialData changes
+    useEffect(() => {
+        if (initialData) {
+            form.reset({
+                ...initialData,
+                validUntil: initialData.validUntil ? new Date(initialData.validUntil) : new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+            });
+        }
+    }, [initialData, form]);
+
+    const formatDateForInput = (dateValue: any) => {
+        if (!dateValue) return "";
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return "";
+        return date.toISOString().split('T')[0];
+    };
+
     useEffect(() => {
         async function fetchData() {
             try {
@@ -69,10 +87,13 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
         fetchData();
     }, []);
 
-    const totalAmount = fields.reduce((acc, field, index) => {
-        const qty = form.watch(`items.${index}.quantity`) || 0;
-        const price = form.watch(`items.${index}.unitPrice`) || 0;
-        return acc + (qty * price);
+    const items = form.watch("items") || [];
+
+    const totalAmount = items.reduce((acc, item) => {
+        const qty = item.quantity || 0;
+        const price = item.unitPrice || 0;
+        const discount = item.discount || 0;
+        return acc + (qty * price) - discount;
     }, 0);
 
     async function onSubmit(data: BudgetFormData) {
@@ -81,27 +102,38 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
             const url = initialData ? `/api/budgets/${initialData.id}` : "/api/budgets";
             const method = initialData ? "PATCH" : "POST";
 
+            const dataWithTotals = {
+                ...data,
+                items: data.items.map(item => ({
+                    ...item,
+                    totalPrice: (item.quantity * item.unitPrice) - (item.discount || 0)
+                }))
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify(dataWithTotals),
             });
 
-            if (!response.ok) throw new Error("Erro ao salvar orçamento");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || errorData.error || "Erro ao salvar orçamento");
+            }
 
             toast.success(initialData ? "Orçamento atualizado!" : "Orçamento criado!");
             onSuccess();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Erro ao salvar orçamento.");
+            toast.error(error.message || "Erro ao salvar orçamento.");
         } finally {
             setIsLoading(false);
         }
     }
 
-    const addItem = (type: 'product' | 'service', id: string) => {
+    const addItem = (type: 'product' | 'service', id: string, itemData?: any) => {
         if (type === 'product') {
-            const item = products.find(p => p.id === id);
+            const item = itemData || products.find(p => p.id === id);
             if (item) {
                 append({
                     productId: item.id,
@@ -109,11 +141,12 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
                     description: item.name,
                     quantity: 1,
                     unitPrice: item.salePrice,
+                    discount: 0,
                     totalPrice: item.salePrice
                 });
             }
         } else {
-            const item = services.find(s => s.id === id);
+            const item = itemData || services.find(s => s.id === id);
             if (item) {
                 append({
                     productId: null,
@@ -121,6 +154,7 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
                     description: item.name,
                     quantity: 1,
                     unitPrice: item.defaultPrice,
+                    discount: 0,
                     totalPrice: item.defaultPrice
                 });
             }
@@ -132,19 +166,21 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label>Cliente *</Label>
-                    <Select
-                        defaultValue={form.getValues("customerId")}
+                    <Combobox
+                        placeholder="Selecione um cliente"
+                        searchPlaceholder="Buscar cliente pelo nome..."
+                        value={form.watch("customerId")}
                         onValueChange={(val) => form.setValue("customerId", val)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecione um cliente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {customers.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        fetchOptions={async (search) => {
+                            const res = await fetch(`/api/customers?q=${search}&limit=10`);
+                            const data = await res.json();
+                            return (data.customers || []).map((c: any) => ({
+                                value: c.id,
+                                label: c.name,
+                                subtitle: c.document || ""
+                            }));
+                        }}
+                    />
                     {form.formState.errors.customerId && (
                         <p className="text-sm text-red-500">{form.formState.errors.customerId.message}</p>
                     )}
@@ -155,7 +191,10 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
                     <Input
                         type="date"
                         {...form.register("validUntil")}
-                        defaultValue={form.getValues("validUntil")?.toISOString().split('T')[0]}
+                        value={formatDateForInput(form.watch("validUntil"))}
+                        onChange={(e) => {
+                            form.setValue("validUntil", new Date(e.target.value));
+                        }}
                     />
                 </div>
             </div>
@@ -164,28 +203,46 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
                 <div className="flex items-center justify-between">
                     <Label className="text-base font-bold">Itens do Orçamento</Label>
                     <div className="flex gap-2">
-                        <Select onValueChange={(val) => addItem('product', val)}>
-                            <SelectTrigger className="w-[180px]">
-                                <Package className="h-4 w-4 mr-2" />
-                                <SelectValue placeholder="Add Produto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {products.map(p => (
-                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select onValueChange={(val) => addItem('service', val)}>
-                            <SelectTrigger className="w-[180px]">
-                                <Wrench className="h-4 w-4 mr-2" />
-                                <SelectValue placeholder="Add Serviço" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {services.map(s => (
-                                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Combobox
+                            placeholder="Add Produto..."
+                            searchPlaceholder="Buscar produto pelo nome..."
+                            className="w-[200px]"
+                            fetchOptions={async (search) => {
+                                const res = await fetch(`/api/products?q=${search}&limit=10`);
+                                const data = await res.json();
+                                return (data.products || []).map((p: any) => ({
+                                    value: p.id,
+                                    label: p.name,
+                                    subtitle: `R$ ${p.salePrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} - Estoque: ${p.stockQty}`,
+                                    metadata: p
+                                }));
+                            }}
+                            onValueChange={(val, opt) => {
+                                if (val && opt) {
+                                    addItem('product', val, opt.metadata);
+                                }
+                            }}
+                        />
+                        <Combobox
+                            placeholder="Add Serviço..."
+                            searchPlaceholder="Buscar serviço pelo nome..."
+                            className="w-[200px]"
+                            fetchOptions={async (search) => {
+                                const res = await fetch(`/api/services?q=${search}`);
+                                const data = await res.json();
+                                return (data.services || []).map((s: any) => ({
+                                    value: s.id,
+                                    label: s.name,
+                                    subtitle: `R$ ${s.defaultPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+                                    metadata: s
+                                }));
+                            }}
+                            onValueChange={(val, opt) => {
+                                if (val && opt) {
+                                    addItem('service', val, opt.metadata);
+                                }
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -198,29 +255,36 @@ export function BudgetForm({ initialData, onSuccess }: BudgetFormProps) {
                                         <Label className="text-[10px] uppercase">Descrição</Label>
                                         <Input {...form.register(`items.${index}.description`)} />
                                     </div>
-                                    <div className="col-span-2 space-y-1">
+                                    <div className="col-span-1 space-y-1">
                                         <Label className="text-[10px] uppercase">Qtd</Label>
                                         <Input
                                             type="number"
                                             {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
-                                            onChange={(e) => {
-                                                const qty = Number(e.target.value);
-                                                const price = form.getValues(`items.${index}.unitPrice`);
-                                                form.setValue(`items.${index}.totalPrice`, qty * price);
-                                            }}
                                         />
                                     </div>
-                                    <div className="col-span-3 space-y-1">
+                                    <div className="col-span-2 space-y-1">
                                         <Label className="text-[10px] uppercase">Preço Un.</Label>
                                         <Input
                                             type="number"
                                             step="0.01"
                                             {...form.register(`items.${index}.unitPrice`, { valueAsNumber: true })}
-                                            onChange={(e) => {
-                                                const price = Number(e.target.value);
-                                                const qty = form.getValues(`items.${index}.quantity`);
-                                                form.setValue(`items.${index}.totalPrice`, qty * price);
-                                            }}
+                                        />
+                                    </div>
+                                    <div className="col-span-2 space-y-1">
+                                        <Label className="text-[10px] uppercase">Desc. (R$)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            {...form.register(`items.${index}.discount`, { valueAsNumber: true })}
+                                        />
+                                    </div>
+                                    <div className="col-span-2 space-y-1">
+                                        <Label className="text-[10px] uppercase">Total</Label>
+                                        <Input
+                                            readOnly
+                                            disabled
+                                            className="bg-slate-100 font-bold"
+                                            value={((form.watch(`items.${index}.quantity`) || 0) * (form.watch(`items.${index}.unitPrice`) || 0) - (form.watch(`items.${index}.discount`) || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                         />
                                     </div>
                                     <div className="col-span-1 text-right">
