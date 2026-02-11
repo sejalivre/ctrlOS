@@ -74,7 +74,7 @@ export function FinancialForm({ initialData, onSuccess }: FinancialFormProps) {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="INCOME">Receita (Entrada)</SelectItem>
+                                        <SelectItem value="REVENUE">Receita (Entrada)</SelectItem>
                                         <SelectItem value="EXPENSE">Despesa (Saída)</SelectItem>
                                     </SelectContent>
                                 </Select>

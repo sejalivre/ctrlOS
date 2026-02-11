@@ -40,10 +40,23 @@ export async function POST(request: Request) {
         const body = await request.json();
 
         // Create financial record
+        console.log("Creating financial record with data:", JSON.stringify({
+            type: body.type,
+            description: body.description,
+            category: body.category,
+            amount: body.amount,
+            paymentMethod: body.paymentMethod,
+            paid: body.paid,
+            paidAt: body.paidAt,
+            customerId: body.customerId,
+            serviceOrderId: body.serviceOrderId,
+        }, null, 2));
+
         const record = await prisma.financialRecord.create({
             data: {
                 type: body.type, // REVENUE, EXPENSE, etc.
                 description: body.description,
+                category: body.category || null,
                 amount: body.amount,
                 paymentMethod: body.paymentMethod,
                 paid: body.paid,

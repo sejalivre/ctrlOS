@@ -300,6 +300,7 @@ model FinancialRecord {
   serviceOrderId String?
   saleId      String?
   description String
+  category    String?
   amount      Float         @default(0)
   paymentMethod PaymentMethod?
   paid        Boolean       @default(false)

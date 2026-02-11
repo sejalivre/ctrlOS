@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface FinancialRecord {
     id: string;
-    type: "INCOME" | "EXPENSE";
+    type: "INCOME" | "REVENUE" | "EXPENSE";
     category: string;
     description: string;
     amount: number;
@@ -97,7 +97,7 @@ export function FinancialTable({ records, onRefresh }: FinancialTableProps) {
                             return (
                                 <TableRow key={record.id} className="hover:bg-slate-50 transition-colors">
                                     <TableCell>
-                                        {record.type === "INCOME" ? (
+                                        {record.type.toUpperCase() === "INCOME" || record.type.toUpperCase() === "REVENUE" ? (
                                             <ArrowUpCircle className="h-5 w-5 text-green-500" />
                                         ) : (
                                             <ArrowDownCircle className="h-5 w-5 text-red-500" />
@@ -113,8 +113,8 @@ export function FinancialTable({ records, onRefresh }: FinancialTableProps) {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <span className={`font-black ${record.type === "INCOME" ? "text-green-600" : "text-red-600"}`}>
-                                            {record.type === "EXPENSE" ? "- " : ""}
+                                        <span className={`font-black ${record.type.toUpperCase() === "INCOME" || record.type.toUpperCase() === "REVENUE" ? "text-green-600" : "text-red-600"}`}>
+                                            {record.type.toUpperCase() === "EXPENSE" ? "- " : ""}
                                             R$ {Number(record.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                         </span>
                                     </TableCell>
