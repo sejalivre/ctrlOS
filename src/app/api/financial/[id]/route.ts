@@ -12,7 +12,6 @@ export async function PATCH(
             where: { id },
             data: {
                 type: body.type,
-                category: body.category,
                 description: body.description,
                 amount: body.amount,
                 paymentMethod: body.paymentMethod || null,

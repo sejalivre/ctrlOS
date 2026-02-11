@@ -18,8 +18,8 @@ export async function GET(request: Request) {
         const sales = await prisma.sale.findMany({
             where: {
                 OR: [
-                    { customer: { name: { contains: query, mode: "insensitive" } } },
-                    { saleNumber: { contains: query, mode: "insensitive" } },
+                    { customer: { name: { contains: query } } },
+                    { saleNumber: { contains: query } },
                 ],
             },
             include: {
@@ -96,8 +96,7 @@ export async function POST(request: Request) {
             if (body.paid) {
                 await tx.financialRecord.create({
                     data: {
-                        type: "INCOME",
-                        category: "SALE",
+                        type: "REVENUE",
                         description: `Venda ${saleNumber}`,
                         amount: totalAmount,
                         paymentMethod: body.paymentMethod || "CASH",

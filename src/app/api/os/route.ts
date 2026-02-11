@@ -72,8 +72,17 @@ export async function POST(request: Request) {
             );
         }
 
+        // Get the last order number and increment
+        const lastOrder = await prisma.serviceOrder.findFirst({
+            orderBy: { orderNumber: 'desc' },
+            select: { orderNumber: true }
+        });
+        
+        const orderNumber = lastOrder ? lastOrder.orderNumber + 1 : 1000;
+
         const order = await prisma.serviceOrder.create({
             data: {
+                orderNumber,
                 customerId: body.customerId,
                 technicianId: body.technicianId || null,
                 status: body.status || "OPENED",

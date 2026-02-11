@@ -50,7 +50,6 @@ export async function POST(request: Request) {
                 customerId: body.customerId,
                 status: body.status || "PENDING",
                 validUntil: new Date(body.validUntil),
-                notes: body.notes || null,
                 totalAmount,
                 items: {
                     create: body.items.map((item: any) => ({
