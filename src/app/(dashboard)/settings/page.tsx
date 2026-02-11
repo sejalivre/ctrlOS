@@ -2,28 +2,69 @@
 
 import { useState, useEffect } from "react";
 import { SettingsForm } from "@/components/forms/SettingsForm";
-import { Settings, Loader2, ShieldCheck, UserCog } from "lucide-react";
+import { Settings, Loader2, ShieldCheck, UserCog, Users, Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserTable } from "@/components/tables/UserTable";
+import { UserForm } from "@/components/forms/UserForm";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState<any>(null);
+
+    // Users state
+    const [users, setUsers] = useState<any[]>([]);
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<any>(null);
+
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchSettings() {
-            try {
-                const response = await fetch("/api/settings");
-                const result = await response.json();
-                setSettings(result.settings);
-            } catch (error) {
-                console.error("Error loading settings:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchSettings();
+        fetchData();
     }, []);
+
+    async function fetchData() {
+        try {
+            const [settingsRes, usersRes] = await Promise.all([
+                fetch("/api/settings"),
+                fetch("/api/users")
+            ]);
+
+            const settingsData = await settingsRes.json();
+            const usersData = await usersRes.json();
+
+            setSettings(settingsData.settings);
+            setUsers(usersData.users || []);
+        } catch (error) {
+            console.error("Error loading data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleAddUser = () => {
+        setEditingUser(null);
+        setIsUserModalOpen(true);
+    };
+
+    const handleEditUser = (user: any) => {
+        setEditingUser(user);
+        setIsUserModalOpen(true);
+    };
+
+    const handleDeleteUser = async (user: any) => {
+        if (!confirm(`Tem certeza que deseja inativar ${user.name}?`)) return;
+
+        try {
+            await fetch(`/api/users/${user.id}`, { method: "DELETE" });
+            toast.success("Usuário inativado!");
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast.error("Erro ao inativar usuário.");
+        }
+    };
 
     if (isLoading) {
         return (
@@ -52,6 +93,9 @@ export default function SettingsPage() {
                     <TabsTrigger value="general" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 h-10 px-6 font-bold">
                         <Settings className="h-4 w-4 mr-2" /> Geral
                     </TabsTrigger>
+                    <TabsTrigger value="users" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 h-10 px-6 font-bold text-slate-600">
+                        <Users className="h-4 w-4 mr-2" /> Colaboradores
+                    </TabsTrigger>
                     <TabsTrigger value="profile" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 h-10 px-6 font-bold text-slate-400">
                         <UserCog className="h-4 w-4 mr-2" /> Meu Perfil
                     </TabsTrigger>
@@ -62,6 +106,26 @@ export default function SettingsPage() {
 
                 <TabsContent value="general" className="mt-8">
                     <SettingsForm initialData={settings} />
+                </TabsContent>
+
+                <TabsContent value="users" className="mt-8">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold">Gerenciar Colaboradores</h2>
+                                <p className="text-sm text-slate-500">Cadastre técnicos e atendentes.</p>
+                            </div>
+                            <Button onClick={handleAddUser} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <Plus className="mr-2 h-4 w-4" /> Novo Colaborador
+                            </Button>
+                        </div>
+
+                        <UserTable
+                            users={users}
+                            onEdit={handleEditUser}
+                            onDelete={handleDeleteUser}
+                        />
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="profile" className="mt-8">
@@ -88,6 +152,15 @@ export default function SettingsPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {isUserModalOpen && (
+                <UserForm
+                    isOpen={isUserModalOpen}
+                    onClose={() => setIsUserModalOpen(false)}
+                    onSuccess={fetchData}
+                    user={editingUser}
+                />
+            )}
         </div>
     );
 }

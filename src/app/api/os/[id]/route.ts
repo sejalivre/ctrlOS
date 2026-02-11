@@ -53,8 +53,27 @@ export async function PATCH(
                 priority: priority || undefined,
                 technicianId: technicianId || undefined,
                 promisedDate: promisedDate ? new Date(promisedDate) : undefined,
+                freightAmount: body.freightAmount !== undefined ? parseFloat(body.freightAmount.toString()) : undefined,
+                othersAmount: body.othersAmount !== undefined ? parseFloat(body.othersAmount.toString()) : undefined,
+                discountAmount: body.discountAmount !== undefined ? parseFloat(body.discountAmount.toString()) : undefined,
             },
         });
+
+        // Recalculate totalAmount if any financial fields were updated
+        if (body.freightAmount !== undefined || body.othersAmount !== undefined || body.discountAmount !== undefined) {
+            const currentOrder = await prisma.serviceOrder.findUnique({
+                where: { id },
+                select: { productsAmount: true, servicesAmount: true, freightAmount: true, othersAmount: true, discountAmount: true }
+            });
+
+            if (currentOrder) {
+                const totalAmount = (currentOrder.productsAmount + currentOrder.servicesAmount + currentOrder.freightAmount + currentOrder.othersAmount) - currentOrder.discountAmount;
+                await prisma.serviceOrder.update({
+                    where: { id },
+                    data: { totalAmount }
+                });
+            }
+        }
 
         // If diagnosis or solution is provided, update the first equipment (standard for single eq OS)
         if (diagnosis !== undefined || solution !== undefined) {
@@ -89,15 +108,15 @@ export async function PUT(
         const { id } = await params;
         const body = await request.json();
         console.log("PUT request body:", JSON.stringify(body, null, 2));
-        const { 
-            customerId, 
-            priority, 
-            status, 
-            promisedDate, 
-            equipments, 
-            items, 
-            totalAmount, 
-            paymentMethod 
+        const {
+            customerId,
+            priority,
+            status,
+            promisedDate,
+            equipments,
+            items,
+            totalAmount,
+            paymentMethod
         } = body;
 
         // Start a transaction to update everything
@@ -110,6 +129,9 @@ export async function PUT(
                     priority,
                     status,
                     promisedDate: promisedDate ? new Date(promisedDate) : null,
+                    freightAmount: body.freightAmount ? parseFloat(body.freightAmount.toString()) : 0,
+                    othersAmount: body.othersAmount ? parseFloat(body.othersAmount.toString()) : 0,
+                    discountAmount: body.discountAmount ? parseFloat(body.discountAmount.toString()) : 0,
                     totalAmount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
                     paymentMethod: paymentMethod || null,
                 },
