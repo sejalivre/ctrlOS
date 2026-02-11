@@ -12,8 +12,8 @@ export async function GET(request: Request) {
         const budgets = await prisma.budget.findMany({
             where: {
                 OR: [
-                    { customer: { name: { contains: query, mode: "insensitive" } } },
-                    { budgetNumber: { contains: query, mode: "insensitive" } },
+                    { customer: { name: { contains: query } } },
+                    { budgetNumber: { contains: query } },
                 ],
             },
             include: {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
                 customerId: body.customerId,
                 status: body.status || "PENDING",
                 validUntil: new Date(body.validUntil),
-                notes: body.notes,
+                notes: body.notes || null,
                 totalAmount,
                 items: {
                     create: body.items.map((item: any) => ({

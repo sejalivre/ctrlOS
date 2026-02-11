@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { OSStatusBadge } from "@/components/ui/os-status-badge";
-import { Eye, MapPin, Calendar, User } from "lucide-react";
+import { Eye, MapPin, Calendar, User, Edit } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -86,12 +86,19 @@ export function OSTable({ orders }: OSTableProps) {
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <Link href={`/os/${order.id}`}>
-                                            <Eye className="h-4 w-4 mr-2" />
-                                            Ver Detalhes
-                                        </Link>
-                                    </Button>
+                                    <div className="flex justify-end gap-2">
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link href={`/os/${order.id}`}>
+                                                <Eye className="h-4 w-4 mr-2" />
+                                                Ver Detalhes
+                                            </Link>
+                                        </Button>
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link href={`/os/${order.id}/edit`}>
+                                                <Edit className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ))

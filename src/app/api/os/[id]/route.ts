@@ -80,6 +80,95 @@ export async function PATCH(
     }
 }
 
+// PUT - Update entire OS with items
+export async function PUT(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const body = await request.json();
+        console.log("PUT request body:", JSON.stringify(body, null, 2));
+        const { 
+            customerId, 
+            priority, 
+            status, 
+            promisedDate, 
+            equipments, 
+            items, 
+            totalAmount, 
+            paymentMethod 
+        } = body;
+
+        // Start a transaction to update everything
+        const result = await prisma.$transaction(async (tx) => {
+            // Update ServiceOrder
+            const order = await tx.serviceOrder.update({
+                where: { id },
+                data: {
+                    customerId,
+                    priority,
+                    status,
+                    promisedDate: promisedDate ? new Date(promisedDate) : null,
+                    totalAmount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
+                    paymentMethod: paymentMethod || null,
+                },
+            });
+
+            // Delete existing items
+            await tx.serviceOrderItem.deleteMany({
+                where: { serviceOrderId: id }
+            });
+
+            // Create new items if provided
+            if (items && items.length > 0) {
+                await tx.serviceOrderItem.createMany({
+                    data: items.map((item: any) => ({
+                        serviceOrderId: id,
+                        productId: item.productId || null,
+                        serviceId: item.serviceId || null,
+                        description: item.description,
+                        quantity: item.quantity,
+                        unitPrice: parseFloat(item.unitPrice.toString()),
+                        totalPrice: parseFloat(item.totalPrice.toString()),
+                    }))
+                });
+            }
+
+            // Update equipments if provided
+            if (equipments && equipments.length > 0) {
+                // Delete existing equipments
+                await tx.equipment.deleteMany({
+                    where: { serviceOrderId: id }
+                });
+
+                // Create new equipments
+                await tx.equipment.createMany({
+                    data: equipments.map((eq: any) => ({
+                        serviceOrderId: id,
+                        type: eq.type,
+                        brand: eq.brand || null,
+                        model: eq.model || null,
+                        serialNumber: eq.serialNumber || null,
+                        reportedIssue: eq.reportedIssue,
+                        diagnosis: eq.diagnosis || null,
+                        solution: eq.solution || null,
+                        accessories: eq.accessories || null,
+                        observations: eq.observations || null,
+                    }))
+                });
+            }
+
+            return order;
+        });
+
+        return NextResponse.json({ order: result });
+    } catch (error: any) {
+        console.error("Update OS error:", error);
+        return NextResponse.json({ error: error?.message || "Erro ao atualizar OS" }, { status: 500 });
+    }
+}
+
 // DELETE - Delete OS
 export async function DELETE(
     request: Request,
