@@ -1,4 +1,4 @@
-# 🔧 Troubleshooting - Problemas de Autenticação
+# 🔧 Troubleshooting - Problemas de Autenticação 
 
 Guia rápido para resolver problemas comuns de login/cadastro no Supabase Auth.
 
