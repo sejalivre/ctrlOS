@@ -98,6 +98,7 @@ export async function POST(request: Request) {
                 await tx.financialRecord.create({
                     data: {
                         type: "REVENUE",
+                        category: "Venda",
                         description: `Venda ${saleNumber}`,
                         amount: totalAmount,
                         paymentMethod: body.paymentMethod || "CASH",

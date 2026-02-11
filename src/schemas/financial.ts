@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const financialTypeEnum = z.enum(["INCOME", "EXPENSE"]);
+export const financialTypeEnum = z.enum(["REVENUE", "EXPENSE"]);
 export const paymentMethodEnum = z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "PIX", "BANK_TRANSFER", "PROMISSORY_NOTE"]);
 
 export const financialRecordSchema = z.object({

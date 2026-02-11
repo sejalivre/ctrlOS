@@ -79,6 +79,7 @@ export async function PATCH(
                 await prisma.financialRecord.create({
                     data: {
                         type: "REVENUE",
+                        category: "Serviço",
                         description: `OS #${order.orderNumber} - ${order.status}`,
                         amount: order.totalAmount,
                         paymentMethod: order.paymentMethod || "CASH",
@@ -175,6 +176,7 @@ export async function PUT(
                     await tx.financialRecord.create({
                         data: {
                             type: "REVENUE",
+                            category: "Serviço",
                             description: `OS #${order.orderNumber} - ${body.status || order.status}`,
                             amount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
                             paymentMethod: paymentMethod || "CASH",

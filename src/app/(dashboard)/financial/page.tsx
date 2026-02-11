@@ -32,11 +32,11 @@ export default function FinancialPage() {
     }, [fetchRecords]);
 
     const totalIncome = records
-        .filter((r: any) => r.type === "INCOME")
+        .filter((r: any) => r.type?.toUpperCase() === "INCOME" || r.type?.toUpperCase() === "REVENUE")
         .reduce((acc, curr: any) => acc + Number(curr.amount), 0);
 
     const totalExpense = records
-        .filter((r: any) => r.type === "EXPENSE")
+        .filter((r: any) => r.type?.toUpperCase() === "EXPENSE")
         .reduce((acc, curr: any) => acc + Number(curr.amount), 0);
 
     const balance = totalIncome - totalExpense;
