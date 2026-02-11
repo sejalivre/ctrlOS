@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,8 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserTable } from "@/components/tables/UserTable";
 import { UserForm } from "@/components/forms/UserForm";
+import { WarrantyTermTable } from "@/components/tables/WarrantyTermTable";
+import { WarrantyTermForm } from "@/components/forms/WarrantyTermForm";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { FileText } from "lucide-react";
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState<any>(null);
@@ -18,6 +22,11 @@ export default function SettingsPage() {
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
 
+    // Warranty Terms state
+    const [warrantyTerms, setWarrantyTerms] = useState<any[]>([]);
+    const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
+    const [editingWarranty, setEditingWarranty] = useState<any>(null);
+
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -26,16 +35,19 @@ export default function SettingsPage() {
 
     async function fetchData() {
         try {
-            const [settingsRes, usersRes] = await Promise.all([
+            const [settingsRes, usersRes, warrantyRes] = await Promise.all([
                 fetch("/api/settings"),
-                fetch("/api/users")
+                fetch("/api/users"),
+                fetch("/api/warranty-terms")
             ]);
 
             const settingsData = await settingsRes.json();
             const usersData = await usersRes.json();
+            const warrantyData = await warrantyRes.json();
 
             setSettings(settingsData.settings);
             setUsers(usersData.users || []);
+            setWarrantyTerms(warrantyData.terms || []);
         } catch (error) {
             console.error("Error loading data:", error);
         } finally {
@@ -63,6 +75,29 @@ export default function SettingsPage() {
         } catch (error) {
             console.error("Error deleting user:", error);
             toast.error("Erro ao inativar usuário.");
+        }
+    };
+
+    const handleAddWarranty = () => {
+        setEditingWarranty(null);
+        setIsWarrantyModalOpen(true);
+    };
+
+    const handleEditWarranty = (term: any) => {
+        setEditingWarranty(term);
+        setIsWarrantyModalOpen(true);
+    };
+
+    const handleDeleteWarranty = async (id: string) => {
+        if (!confirm("Tem certeza que deseja excluir este termo de garantia?")) return;
+
+        try {
+            await fetch(`/api/warranty-terms/${id}`, { method: "DELETE" });
+            toast.success("Termo excluído!");
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting warranty term:", error);
+            toast.error("Erro ao excluir termo.");
         }
     };
 
@@ -96,6 +131,9 @@ export default function SettingsPage() {
                     <TabsTrigger value="users" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 h-10 px-6 font-bold text-slate-600">
                         <Users className="h-4 w-4 mr-2" /> Colaboradores
                     </TabsTrigger>
+                    <TabsTrigger value="warranty" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 h-10 px-6 font-bold text-slate-600">
+                        <FileText className="h-4 w-4 mr-2" /> Garantias
+                    </TabsTrigger>
                     <TabsTrigger value="profile" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 h-10 px-6 font-bold text-slate-400">
                         <UserCog className="h-4 w-4 mr-2" /> Meu Perfil
                     </TabsTrigger>
@@ -124,6 +162,26 @@ export default function SettingsPage() {
                             users={users}
                             onEdit={handleEditUser}
                             onDelete={handleDeleteUser}
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="warranty" className="mt-8">
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h2 className="text-lg font-bold">Termos de Garantia</h2>
+                                <p className="text-sm text-slate-500">Gerencie textos padrão para OS e Vendas.</p>
+                            </div>
+                            <Button onClick={handleAddWarranty} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                                <Plus className="mr-2 h-4 w-4" /> Novo Termo
+                            </Button>
+                        </div>
+
+                        <WarrantyTermTable
+                            terms={warrantyTerms}
+                            onEdit={handleEditWarranty}
+                            onDelete={handleDeleteWarranty}
                         />
                     </div>
                 </TabsContent>
@@ -161,6 +219,16 @@ export default function SettingsPage() {
                     user={editingUser}
                 />
             )}
+
+            {isWarrantyModalOpen && (
+                <WarrantyTermForm
+                    isOpen={isWarrantyModalOpen}
+                    onClose={() => setIsWarrantyModalOpen(false)}
+                    onSuccess={fetchData}
+                    initialData={editingWarranty}
+                />
+            )}
         </div>
     );
 }
+

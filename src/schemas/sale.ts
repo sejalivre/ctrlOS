@@ -17,6 +17,7 @@ export const saleSchema = z.object({
     paymentMethod: paymentMethodEnum.default("CASH"),
     paid: z.boolean().default(true),
     items: z.array(saleItemSchema).min(1, "A venda deve ter pelo menos um item"),
+    warrantyTerms: z.string().optional().nullable(),
 });
 
 export type SaleFormData = z.infer<typeof saleSchema>;

@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 export default function AuthLayout({
     children,
 }: {
@@ -9,3 +10,4 @@ export default function AuthLayout({
         </div>
     );
 }
+

@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromDatabase } from "@/lib/auth-helpers";
@@ -67,3 +68,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Erro ao atualizar configurações" }, { status: 500 });
     }
 }
+

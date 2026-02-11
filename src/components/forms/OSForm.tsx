@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 interface OSFormProps {
     onSuccess: () => void;
@@ -20,6 +21,7 @@ export function OSForm({ onSuccess }: OSFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
     const [technicians, setTechnicians] = useState<{ id: string; name: string }[]>([]);
+    const [warrantyTerms, setWarrantyTerms] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
     const form = useForm<ServiceOrderFormData>({
@@ -38,6 +40,7 @@ export function OSForm({ onSuccess }: OSFormProps) {
                 accessories: "",
                 observations: ""
             }],
+            warrantyTerms: "",
         },
     });
 
@@ -50,16 +53,19 @@ export function OSForm({ onSuccess }: OSFormProps) {
     useEffect(() => {
         async function fetchData() {
             try {
-                const [custRes, techRes] = await Promise.all([
+                const [custRes, techRes, warrantyRes] = await Promise.all([
                     fetch("/api/customers?limit=100"),
-                    fetch("/api/users?role=TECHNICIAN&active=true")
+                    fetch("/api/users?role=TECHNICIAN&active=true"),
+                    fetch("/api/warranty-terms"),
                 ]);
 
                 const custData = await custRes.json();
                 const techData = await techRes.json();
+                const warrantyData = await warrantyRes.json();
 
                 setCustomers(custData.customers || []);
                 setTechnicians(techData.users || []);
+                setWarrantyTerms(warrantyData.terms || []);
             } catch (error) {
                 console.error("Error loading data:", error);
             }
@@ -214,6 +220,37 @@ export function OSForm({ onSuccess }: OSFormProps) {
                     </Card>
                 ))}
             </div>
+
+            {/* Garantia */}
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-lg">Termos de Garantia</h3>
+                            <div className="w-64">
+                                <Select onValueChange={(val) => {
+                                    const term = warrantyTerms.find(t => t.id === val);
+                                    if (term) form.setValue("warrantyTerms", term.content);
+                                }}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Escolher termo pronto..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {warrantyTerms.map(t => (
+                                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <Textarea
+                            {...form.register("warrantyTerms")}
+                            placeholder="Texto da garantia que aparecerá na OS"
+                            className="min-h-[120px]"
+                        />
+                    </div>
+                </CardContent>
+            </Card>
 
             <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={isLoading} className="w-full md:w-auto">

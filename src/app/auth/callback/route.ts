@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'

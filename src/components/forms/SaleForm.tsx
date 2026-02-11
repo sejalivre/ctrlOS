@@ -19,6 +19,7 @@ import { Loader2, Trash2, Package, Wrench, CreditCard, Banknote, QrCode } from "
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SaleFormProps {
     onSuccess: () => void;
@@ -37,6 +38,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
     const [customers, setCustomers] = useState<{ id: string; name: string }[]>([]);
     const [products, setProducts] = useState<{ id: string; name: string; salePrice: number; stockQty: number }[]>([]);
     const [services, setServices] = useState<{ id: string; name: string; defaultPrice: number }[]>([]);
+    const [warrantyTerms, setWarrantyTerms] = useState<any[]>([]);
 
     const form = useForm<SaleFormData>({
         resolver: zodResolver(saleSchema as any),
@@ -45,6 +47,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
             paymentMethod: "CASH",
             paid: true,
             items: [],
+            warrantyTerms: "",
         },
     });
 
@@ -56,19 +59,22 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
     useEffect(() => {
         async function fetchData() {
             try {
-                const [custRes, prodRes, servRes] = await Promise.all([
+                const [custRes, prodRes, servRes, warrantyRes] = await Promise.all([
                     fetch("/api/customers?limit=100"),
                     fetch("/api/products?limit=100"),
                     fetch("/api/services?limit=100"),
+                    fetch("/api/warranty-terms"),
                 ]);
-                const [custData, prodData, servData] = await Promise.all([
+                const [custData, prodData, servData, warrantyData] = await Promise.all([
                     custRes.json(),
                     prodRes.json(),
                     servRes.json(),
+                    warrantyRes.json(),
                 ]);
                 setCustomers(custData.customers || []);
                 setProducts(prodData.products || []);
                 setServices(servData.services || []);
+                setWarrantyTerms(warrantyData.terms || []);
             } catch (error) {
                 console.error("Error loading form data:", error);
             }
@@ -191,6 +197,34 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                             </SelectContent>
                         </Select>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <Label className="font-bold">Termos de Garantia</Label>
+                        <div className="w-64">
+                            <Select onValueChange={(val) => {
+                                const term = warrantyTerms.find(t => t.id === val);
+                                if (term) form.setValue("warrantyTerms", term.content);
+                            }}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Escolher termo..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {warrantyTerms.map(t => (
+                                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <Textarea
+                        {...form.register("warrantyTerms")}
+                        placeholder="Texto da garantia que aparecerá na venda"
+                        className="min-h-[80px]"
+                    />
                 </CardContent>
             </Card>
 

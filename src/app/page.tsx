@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ServiceOrder, Customer, OSStatus } from "@prisma/client";
@@ -177,3 +178,4 @@ export default async function HomePage() {
     </Providers>
   );
 }
+

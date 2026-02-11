@@ -1,3 +1,4 @@
+// Verification: 2026-02-11 18:34:21
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUserFromDatabase } from "@/lib/auth-helpers";
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
                     customerId: body.customerId || null,
                     sellerId: user.id, // Usar o ID do usuário do nosso banco
                     totalAmount,
+                    warrantyTerms: body.warrantyTerms || null,
                     paymentMethod: body.paymentMethod || "CASH",
                     paid: body.paid ?? true,
                     items: {
@@ -121,3 +123,4 @@ export async function POST(request: Request) {
         );
     }
 }
+

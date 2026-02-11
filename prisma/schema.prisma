@@ -147,6 +147,7 @@ model ServiceOrder {
   completedAt       DateTime?
   deliveredAt       DateTime?
   totalAmount       Float              @default(0)
+  warrantyTerms     String?            @db.Text
   productsAmount    Float              @default(0)
   servicesAmount    Float              @default(0)
   freightAmount     Float              @default(0)
@@ -259,6 +260,7 @@ model Sale {
   customerId   String
   sellerId     String
   totalAmount  Float     @default(0)
+  warrantyTerms String?  @db.Text
   paymentMethod PaymentMethod?
   paid         Boolean   @default(false)
   paidAt       DateTime?
@@ -339,3 +341,13 @@ model SystemSettings {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+model WarrantyTerm {
+  id        String   @id @default(cuid())
+  name      String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
