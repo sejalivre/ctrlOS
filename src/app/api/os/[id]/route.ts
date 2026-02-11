@@ -54,8 +54,42 @@ export async function PATCH(
                 technicianId: technicianId || undefined,
                 promisedDate: promisedDate ? new Date(promisedDate) : undefined,
                 paymentMethod: body.paymentMethod || undefined,
+                paid: body.paid !== undefined ? body.paid : undefined,
+                paidAt: body.paid ? new Date() : (body.paid === false ? null : undefined),
             },
         });
+
+        // Handle Financial Record if Paid
+        if (body.paid) {
+            const existingRecord = await prisma.financialRecord.findFirst({
+                where: { serviceOrderId: id }
+            });
+
+            if (existingRecord) {
+                await prisma.financialRecord.update({
+                    where: { id: existingRecord.id },
+                    data: {
+                        amount: order.totalAmount,
+                        paymentMethod: order.paymentMethod || "CASH",
+                        paid: true,
+                        paidAt: new Date(),
+                    }
+                });
+            } else {
+                await prisma.financialRecord.create({
+                    data: {
+                        type: "REVENUE",
+                        description: `OS #${order.orderNumber} - ${order.status}`,
+                        amount: order.totalAmount,
+                        paymentMethod: order.paymentMethod || "CASH",
+                        serviceOrderId: id,
+                        customerId: order.customerId,
+                        paid: true,
+                        paidAt: new Date(),
+                    }
+                });
+            }
+        }
 
 
         // If diagnosis or solution is provided, update the first equipment (standard for single eq OS)
@@ -116,8 +150,42 @@ export async function PUT(
                     promisedDate: promisedDate ? new Date(promisedDate) : null,
                     totalAmount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
                     paymentMethod: paymentMethod || null,
+                    paid: body.paid ?? false,
+                    paidAt: body.paid ? new Date() : null,
                 },
             });
+
+            // Handle Financial Record for Paid OS
+            if (body.paid) {
+                const existingRecord = await tx.financialRecord.findFirst({
+                    where: { serviceOrderId: id }
+                });
+
+                if (existingRecord) {
+                    await tx.financialRecord.update({
+                        where: { id: existingRecord.id },
+                        data: {
+                            amount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
+                            paymentMethod: paymentMethod || "CASH",
+                            paid: true,
+                            paidAt: new Date(),
+                        }
+                    });
+                } else {
+                    await tx.financialRecord.create({
+                        data: {
+                            type: "REVENUE",
+                            description: `OS #${order.orderNumber} - ${body.status || order.status}`,
+                            amount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
+                            paymentMethod: paymentMethod || "CASH",
+                            serviceOrderId: id,
+                            customerId: customerId,
+                            paid: true,
+                            paidAt: new Date(),
+                        }
+                    });
+                }
+            }
 
             // Delete existing items
             await tx.serviceOrderItem.deleteMany({
@@ -126,7 +194,6 @@ export async function PUT(
 
             // Create new items if provided
             if (items && items.length > 0) {
-                // Filter out empty items or ensure description exists
                 const validItems = items.filter((item: any) => item.description || item.productId || item.serviceId);
 
                 if (validItems.length > 0) {
@@ -154,12 +221,10 @@ export async function PUT(
 
             // Update equipments if provided
             if (equipments && equipments.length > 0) {
-                // Delete existing equipments
                 await tx.equipment.deleteMany({
                     where: { serviceOrderId: id }
                 });
 
-                // Create new equipments
                 await tx.equipment.createMany({
                     data: equipments.map((eq: any) => ({
                         serviceOrderId: id,

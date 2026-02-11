@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Loader2, Trash2, Package, Wrench, CreditCard, Banknote, QrCode } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Combobox } from "@/components/ui/combobox";
 
 interface SaleFormProps {
     onSuccess: () => void;
@@ -78,7 +79,8 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
     const totalAmount = fields.reduce((acc, field, index) => {
         const qty = form.watch(`items.${index}.quantity`) || 0;
         const price = form.watch(`items.${index}.unitPrice`) || 0;
-        return acc + (qty * price);
+        const discount = form.watch(`items.${index}.discount`) || 0;
+        return acc + (qty * price - discount);
     }, 0);
 
     async function onSubmit(data: SaleFormData) {
@@ -87,29 +89,40 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
             return;
         }
 
+        const dataWithTotals = {
+            ...data,
+            items: data.items.map(item => ({
+                ...item,
+                totalPrice: (item.quantity * item.unitPrice) - (item.discount || 0)
+            }))
+        };
+
         setIsLoading(true);
         try {
             const response = await fetch("/api/sales", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify(dataWithTotals),
             });
 
-            if (!response.ok) throw new Error("Erro ao realizar venda");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || errorData.error || "Erro ao realizar venda");
+            }
 
             toast.success("Venda realizada com sucesso!");
             onSuccess();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error("Erro ao salvar venda.");
+            toast.error(error.message || "Erro ao salvar venda.");
         } finally {
             setIsLoading(false);
         }
     }
 
-    const addItem = (type: 'product' | 'service', id: string) => {
+    const addItem = (type: 'product' | 'service', id: string, itemData?: any) => {
         if (type === 'product') {
-            const item = products.find(p => p.id === id);
+            const item = itemData || products.find(p => p.id === id);
             if (item) {
                 append({
                     productId: item.id,
@@ -117,11 +130,12 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                     description: item.name,
                     quantity: 1,
                     unitPrice: item.salePrice,
+                    discount: 0,
                     totalPrice: item.salePrice
                 });
             }
         } else {
-            const item = services.find(s => s.id === id);
+            const item = itemData || services.find(s => s.id === id);
             if (item) {
                 append({
                     productId: null,
@@ -129,6 +143,7 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                     description: item.name,
                     quantity: 1,
                     unitPrice: item.defaultPrice,
+                    discount: 0,
                     totalPrice: item.defaultPrice
                 });
             }
@@ -141,17 +156,21 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                 <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>Cliente (Opcional)</Label>
-                        <Select onValueChange={(val) => form.setValue("customerId", val)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Balcão / Cliente não identificado" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="null">Balcão</SelectItem>
-                                {customers.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Combobox
+                            placeholder="Selecione o cliente ou deixe em branco para Balcão"
+                            searchPlaceholder="Buscar cliente pelo nome..."
+                            value={form.watch("customerId") || ""}
+                            onValueChange={(val) => form.setValue("customerId", val || null)}
+                            fetchOptions={async (search) => {
+                                const res = await fetch(`/api/customers?q=${search}&limit=10`);
+                                const data = await res.json();
+                                return (data.customers || []).map((c: any) => ({
+                                    value: c.id,
+                                    label: c.name,
+                                    subtitle: c.document || ""
+                                }));
+                            }}
+                        />
                     </div>
 
                     <div className="space-y-2">
@@ -179,30 +198,46 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                 <div className="flex items-center justify-between">
                     <Label className="text-base font-bold">Carrinho de Vendas</Label>
                     <div className="flex gap-2">
-                        <Select onValueChange={(val) => addItem('product', val)}>
-                            <SelectTrigger className="w-[180px] border-amber-200 bg-amber-50">
-                                <Package className="h-4 w-4 mr-2 text-amber-600" />
-                                <SelectValue placeholder="Add Produto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {products.map(p => (
-                                    <SelectItem key={p.id} value={p.id}>
-                                        {p.name} ({p.stockQty} un)
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select onValueChange={(val) => addItem('service', val)}>
-                            <SelectTrigger className="w-[180px] border-blue-200 bg-blue-50">
-                                <Wrench className="h-4 w-4 mr-2 text-blue-600" />
-                                <SelectValue placeholder="Add Serviço" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {services.map(s => (
-                                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Combobox
+                            placeholder="Add Produto..."
+                            searchPlaceholder="Buscar produto..."
+                            className="w-[200px] border-amber-200 bg-amber-50"
+                            fetchOptions={async (search) => {
+                                const res = await fetch(`/api/products?q=${search}&limit=10`);
+                                const data = await res.json();
+                                return (data.products || []).map((p: any) => ({
+                                    value: p.id,
+                                    label: p.name,
+                                    subtitle: `R$ ${p.salePrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} - Qtd: ${p.stockQty}`,
+                                    metadata: p
+                                }));
+                            }}
+                            onValueChange={(val, opt) => {
+                                if (val && opt) {
+                                    addItem('product', val, opt.metadata);
+                                }
+                            }}
+                        />
+                        <Combobox
+                            placeholder="Add Serviço..."
+                            searchPlaceholder="Buscar serviço..."
+                            className="w-[200px] border-blue-200 bg-blue-50"
+                            fetchOptions={async (search) => {
+                                const res = await fetch(`/api/services?q=${search}`);
+                                const data = await res.json();
+                                return (data.services || []).map((s: any) => ({
+                                    value: s.id,
+                                    label: s.name,
+                                    subtitle: `R$ ${s.defaultPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+                                    metadata: s
+                                }));
+                            }}
+                            onValueChange={(val, opt) => {
+                                if (val && opt) {
+                                    addItem('service', val, opt.metadata);
+                                }
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -226,16 +261,24 @@ export function SaleForm({ onSuccess }: SaleFormProps) {
                                     }}
                                 />
                             </div>
-                            <div className="w-28 space-y-1">
+                            <div className="w-24 space-y-1">
                                 <Label className="text-[10px] uppercase">Preço Un.</Label>
                                 <Label className="block h-8 leading-8 font-bold">
                                     R$ {form.watch(`items.${index}.unitPrice`).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                 </Label>
                             </div>
+                            <div className="w-24 space-y-1">
+                                <Label className="text-[10px] uppercase">Desc. (R$)</Label>
+                                <Input
+                                    type="number"
+                                    className="h-8"
+                                    {...form.register(`items.${index}.discount`, { valueAsNumber: true })}
+                                />
+                            </div>
                             <div className="w-28 space-y-1">
                                 <Label className="text-[10px] uppercase">Subtotal</Label>
                                 <Label className="block h-8 leading-8 font-bold text-blue-600">
-                                    R$ {(form.watch(`items.${index}.quantity`) * form.watch(`items.${index}.unitPrice`)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                    R$ {(form.watch(`items.${index}.quantity`) * form.watch(`items.${index}.unitPrice`) - (form.watch(`items.${index}.discount`) || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                                 </Label>
                             </div>
                             <Button

@@ -71,6 +71,7 @@ export async function POST(request: Request) {
                             description: item.description,
                             quantity: item.quantity,
                             unitPrice: item.unitPrice,
+                            discount: item.discount || 0,
                             totalPrice: item.totalPrice,
                         }))
                     }
@@ -101,6 +102,7 @@ export async function POST(request: Request) {
                         amount: totalAmount,
                         paymentMethod: body.paymentMethod || "CASH",
                         saleId: sale.id,
+                        paid: true,
                         paidAt: new Date(),
                     }
                 });

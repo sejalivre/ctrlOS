@@ -243,6 +243,7 @@ model BudgetItem {
   description String
   quantity  Int      @default(1)
   unitPrice Float    @default(0)
+  discount  Float    @default(0)
   totalPrice Float   @default(0)
   createdAt DateTime @default(now())
   product   Product? @relation(fields: [productId], references: [id])
@@ -281,6 +282,7 @@ model SaleItem {
   description String
   quantity  Int      @default(1)
   unitPrice Float    @default(0)
+  discount  Float    @default(0)
   totalPrice Float   @default(0)
   createdAt DateTime @default(now())
   product   Product? @relation(fields: [productId], references: [id])

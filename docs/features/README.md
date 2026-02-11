@@ -26,4 +26,7 @@ Este diretório contém a documentação técnica detalhada de todas as funciona
 - **Seleção de método de pagamento**
 - **Integração financeira** automática
 
-*Atualizado em: 10 de Fevereiro de 2026*
+*Última atualização: 11 de Fevereiro de 2026 - v2.1.0*
+- **Nova Funcionalidade**: Busca Incremental (Autocomplete) em Orçamentos e Vendas.
+- **Melhoria**: Novo sistema de descontos por item no Orçamento.
+- **Estabilização**: Correção reativa de cálculos e envios de formulário.
