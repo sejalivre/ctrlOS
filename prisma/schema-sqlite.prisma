@@ -259,7 +259,6 @@ model Sale {
   customer     Customer  @relation(fields: [customerId], references: [id])
   seller       User      @relation(fields: [sellerId], references: [id])
   items        SaleItem[]
-  financialRecords FinancialRecord[]
 
   @@index([customerId])
   @@index([sellerId])
@@ -314,18 +313,4 @@ enum FinancialType {
   EXPENSE
   INVESTMENT
   LOAN
-}
-
-model SystemSettings {
-  id              String  @id @default("global")
-  companyName     String? @default("CtrlOS - Assistência Técnica")
-  companyLogo     String?
-  companyPhone    String?
-  companyEmail    String?
-  companyAddress  String?
-  companyDocument String?
-  currency        String? @default("BRL")
-  footerText      String? @default("CtrlOS © 2024 - Sistema de Gestão para Assistências Técnicas")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }

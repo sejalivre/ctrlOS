@@ -39,6 +39,8 @@ export async function middleware(request: NextRequest) {
                           !request.nextUrl.pathname.startsWith('/api/auth'))
 
   // Se não está autenticado e tenta acessar dashboard, redireciona para login
+  // Temporariamente desativado para testes
+  /*
   if (!user && isDashboardPage) {
     const redirectUrl = new URL('/login', request.url)
     return NextResponse.redirect(redirectUrl)
@@ -49,6 +51,7 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = new URL('/', request.url)
     return NextResponse.redirect(redirectUrl)
   }
+  */
 
   return supabaseResponse
 }

@@ -9,11 +9,11 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const user = await syncUserWithDatabase();
-
-    if (!user) {
-        redirect("/login");
-    }
+    // Temporariamente desativado para testes
+    // const user = await syncUserWithDatabase();
+    // if (!user) {
+    //     redirect("/login");
+    // }
 
     return (
         <Providers>

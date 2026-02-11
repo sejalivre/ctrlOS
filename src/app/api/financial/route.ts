@@ -12,7 +12,6 @@ export async function GET(request: Request) {
         const records = await prisma.financialRecord.findMany({
             where: {
                 ...(type && { type: type as any }),
-                ...(category && { category: { contains: category, mode: "insensitive" } }),
             },
             orderBy: { createdAt: "desc" },
         });
@@ -30,7 +29,6 @@ export async function POST(request: Request) {
         const record = await prisma.financialRecord.create({
             data: {
                 type: body.type,
-                category: body.category,
                 description: body.description,
                 amount: body.amount,
                 paymentMethod: body.paymentMethod || null,

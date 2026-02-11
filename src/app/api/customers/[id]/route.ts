@@ -43,14 +43,12 @@ export async function PATCH(
             data: {
                 name: body.name,
                 phone: body.phone,
-                whatsapp: body.whatsapp,
                 email: body.email,
                 document: body.document,
                 address: body.address,
                 city: body.city,
                 state: body.state,
                 zipCode: body.zipCode,
-                notes: body.notes,
             },
         });
 
