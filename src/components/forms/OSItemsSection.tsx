@@ -15,6 +15,7 @@ interface OSItem {
     description: string;
     quantity: number;
     unitPrice: number;
+    discount: number;
     totalPrice: number;
     productId?: string | null;
     serviceId?: string | null;
@@ -68,13 +69,20 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
         }
     }, [serviceOrderId]);
 
-    // Sync financials if initialData changes
+    // Sync financials if initialData changes (only on mount or if explicitly different)
     useEffect(() => {
         if (initialData) {
-            setFinancials({
-                freightAmount: initialData.freightAmount,
-                othersAmount: initialData.othersAmount,
-                discountAmount: initialData.discountAmount,
+            setFinancials(prev => {
+                if (prev.freightAmount === initialData.freightAmount &&
+                    prev.othersAmount === initialData.othersAmount &&
+                    prev.discountAmount === initialData.discountAmount) {
+                    return prev;
+                }
+                return {
+                    freightAmount: initialData.freightAmount,
+                    othersAmount: initialData.othersAmount,
+                    discountAmount: initialData.discountAmount,
+                };
             });
         }
     }, [initialData]);
@@ -194,18 +202,18 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
         }
     };
 
-    // Update item quantity
-    const handleUpdateQuantity = async (itemId: string, quantity: number) => {
+    // Update item quantity or discount
+    const handleUpdateItem = async (itemId: string, quantity: number, discount: number) => {
         if (quantity < 1) return;
 
         try {
             const response = await fetch(`/api/os/${serviceOrderId}/items/${itemId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ quantity, discount: 0 }),
+                body: JSON.stringify({ quantity, discount }),
             });
 
-            if (!response.ok) throw new Error("Erro ao atualizar quantidade");
+            if (!response.ok) throw new Error("Erro ao atualizar item");
 
             fetchItems();
         } catch (error: any) {
@@ -277,7 +285,8 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Produto</TableHead>
-                                        <TableHead className="w-[100px]">Quant.</TableHead>
+                                        <TableHead className="w-[80px]">Quant.</TableHead>
+                                        <TableHead className="w-[120px]">Desconto</TableHead>
                                         <TableHead className="w-[120px]">Valor Unit.</TableHead>
                                         <TableHead className="w-[120px]">Subtotal</TableHead>
                                         <TableHead className="w-[60px]"></TableHead>
@@ -301,9 +310,21 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
                                                     type="number"
                                                     min="1"
                                                     value={item.quantity}
-                                                    onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
-                                                    className="w-[80px]"
+                                                    onChange={(e) => handleUpdateItem(item.id, parseInt(e.target.value) || 1, item.discount)}
+                                                    className="w-[70px]"
                                                 />
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="relative">
+                                                    <span className="absolute left-2 top-2.5 text-xs text-muted-foreground">R$</span>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={item.discount}
+                                                        onChange={(e) => handleUpdateItem(item.id, item.quantity, parseFloat(e.target.value) || 0)}
+                                                        className="pl-7 w-[100px]"
+                                                    />
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 R$ {item.unitPrice.toFixed(2)}
@@ -357,7 +378,8 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Serviço</TableHead>
-                                        <TableHead className="w-[100px]">Quant.</TableHead>
+                                        <TableHead className="w-[80px]">Quant.</TableHead>
+                                        <TableHead className="w-[120px]">Desconto</TableHead>
                                         <TableHead className="w-[120px]">Valor Unit.</TableHead>
                                         <TableHead className="w-[120px]">Subtotal</TableHead>
                                         <TableHead className="w-[60px]"></TableHead>
@@ -381,9 +403,21 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
                                                     type="number"
                                                     min="1"
                                                     value={item.quantity}
-                                                    onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 1)}
-                                                    className="w-[80px]"
+                                                    onChange={(e) => handleUpdateItem(item.id, parseInt(e.target.value) || 1, item.discount)}
+                                                    className="w-[70px]"
                                                 />
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="relative">
+                                                    <span className="absolute left-2 top-2.5 text-xs text-muted-foreground">R$</span>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={item.discount}
+                                                        onChange={(e) => handleUpdateItem(item.id, item.quantity, parseFloat(e.target.value) || 0)}
+                                                        className="pl-7 w-[100px]"
+                                                    />
+                                                </div>
                                             </TableCell>
                                             <TableCell>
                                                 R$ {item.unitPrice.toFixed(2)}
@@ -444,7 +478,7 @@ export default function OSItemsSection({ serviceOrderId, initialData, onTotalCha
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-muted-foreground">Desconto</label>
+                            <label className="text-sm font-medium text-muted-foreground">Desconto Geral</label>
                             <Input
                                 type="number"
                                 step="0.01"

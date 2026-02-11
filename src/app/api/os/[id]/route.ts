@@ -53,27 +53,10 @@ export async function PATCH(
                 priority: priority || undefined,
                 technicianId: technicianId || undefined,
                 promisedDate: promisedDate ? new Date(promisedDate) : undefined,
-                freightAmount: body.freightAmount !== undefined ? parseFloat(body.freightAmount.toString()) : undefined,
-                othersAmount: body.othersAmount !== undefined ? parseFloat(body.othersAmount.toString()) : undefined,
-                discountAmount: body.discountAmount !== undefined ? parseFloat(body.discountAmount.toString()) : undefined,
+                paymentMethod: body.paymentMethod || undefined,
             },
         });
 
-        // Recalculate totalAmount if any financial fields were updated
-        if (body.freightAmount !== undefined || body.othersAmount !== undefined || body.discountAmount !== undefined) {
-            const currentOrder = await prisma.serviceOrder.findUnique({
-                where: { id },
-                select: { productsAmount: true, servicesAmount: true, freightAmount: true, othersAmount: true, discountAmount: true }
-            });
-
-            if (currentOrder) {
-                const totalAmount = (currentOrder.productsAmount + currentOrder.servicesAmount + currentOrder.freightAmount + currentOrder.othersAmount) - currentOrder.discountAmount;
-                await prisma.serviceOrder.update({
-                    where: { id },
-                    data: { totalAmount }
-                });
-            }
-        }
 
         // If diagnosis or solution is provided, update the first equipment (standard for single eq OS)
         if (diagnosis !== undefined || solution !== undefined) {
@@ -110,6 +93,7 @@ export async function PUT(
         console.log("PUT request body:", JSON.stringify(body, null, 2));
         const {
             customerId,
+            technicianId,
             priority,
             status,
             promisedDate,
@@ -126,12 +110,10 @@ export async function PUT(
                 where: { id },
                 data: {
                     customerId,
+                    technicianId: technicianId || null,
                     priority,
                     status,
                     promisedDate: promisedDate ? new Date(promisedDate) : null,
-                    freightAmount: body.freightAmount ? parseFloat(body.freightAmount.toString()) : 0,
-                    othersAmount: body.othersAmount ? parseFloat(body.othersAmount.toString()) : 0,
-                    discountAmount: body.discountAmount ? parseFloat(body.discountAmount.toString()) : 0,
                     totalAmount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
                     paymentMethod: paymentMethod || null,
                 },
@@ -144,17 +126,30 @@ export async function PUT(
 
             // Create new items if provided
             if (items && items.length > 0) {
-                await tx.serviceOrderItem.createMany({
-                    data: items.map((item: any) => ({
-                        serviceOrderId: id,
-                        productId: item.productId || null,
-                        serviceId: item.serviceId || null,
-                        description: item.description,
-                        quantity: item.quantity,
-                        unitPrice: parseFloat(item.unitPrice.toString()),
-                        totalPrice: parseFloat(item.totalPrice.toString()),
-                    }))
-                });
+                // Filter out empty items or ensure description exists
+                const validItems = items.filter((item: any) => item.description || item.productId || item.serviceId);
+
+                if (validItems.length > 0) {
+                    await tx.serviceOrderItem.createMany({
+                        data: validItems.map((item: any) => {
+                            const q = Number(item.quantity) || 1;
+                            const up = Number(item.unitPrice) || 0;
+                            const d = Number(item.discount) || 0;
+                            const tp = Number(item.totalPrice) || (q * up - d);
+
+                            return {
+                                serviceOrderId: id,
+                                productId: item.productId || null,
+                                serviceId: item.serviceId || null,
+                                description: item.description || "Item sem descrição",
+                                quantity: q,
+                                unitPrice: up,
+                                discount: d,
+                                totalPrice: tp,
+                            };
+                        })
+                    });
+                }
             }
 
             // Update equipments if provided

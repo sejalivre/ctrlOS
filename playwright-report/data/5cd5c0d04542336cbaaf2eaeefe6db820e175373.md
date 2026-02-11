@@ -1,0 +1,174 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - complementary:
+      - generic:
+        - generic: C
+        - generic: ctrlOS
+      - navigation:
+        - link:
+          - /url: /
+          - img
+          - text: Dashboard
+        - link:
+          - /url: /os/dashboard
+          - img
+          - text: Dashboard OS
+        - link:
+          - /url: /os
+          - img
+          - text: Ordens de Serviço
+        - link:
+          - /url: /customers
+          - img
+          - text: Clientes
+        - link:
+          - /url: /products
+          - img
+          - text: Produtos
+        - link:
+          - /url: /services
+          - img
+          - text: Serviços
+        - link:
+          - /url: /budgets
+          - img
+          - text: Orçamentos
+        - link:
+          - /url: /sales
+          - img
+          - text: Vendas
+        - link:
+          - /url: /financial
+          - img
+          - text: Financeiro
+        - link:
+          - /url: /reports
+          - img
+          - text: Relatórios
+        - link:
+          - /url: /settings
+          - img
+          - text: Configurações
+      - generic:
+        - paragraph: ctrlOS v0.1.0
+    - generic:
+      - banner:
+        - generic:
+          - heading [level=1]: TechAssist Pro
+        - generic:
+          - button:
+            - generic:
+              - generic: U
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - heading [level=1]: Gestão de Clientes
+                - paragraph: Cadastre e gerencie as informações dos seus clientes.
+            - button:
+              - img
+              - text: Novo Cliente
+          - generic:
+            - generic:
+              - img
+              - textbox:
+                - /placeholder: Buscar por nome, email ou telefone...
+                - text: Cliente Edit 1770828254993
+          - generic:
+            - generic:
+              - table:
+                - rowgroup:
+                  - row:
+                    - columnheader: Nome
+                    - columnheader: Contato
+                    - columnheader: Documento
+                    - columnheader: Cadastro
+                    - columnheader: Ações
+                - rowgroup:
+                  - row:
+                    - cell:
+                      - generic:
+                        - generic: Cliente Edit 1770828254993
+                    - cell:
+                      - generic:
+                        - generic:
+                          - img
+                          - text: "11888888888"
+                    - cell: "-"
+                    - cell: 11/02/2026
+                    - cell:
+                      - generic:
+                        - button [expanded]:
+                          - img
+                        - button:
+                          - img
+  - region "Notifications alt+T"
+  - generic [ref=e5] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e6]:
+      - img [ref=e7]
+    - generic [ref=e10]:
+      - button "Open issues overlay" [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: "0"
+          - generic [ref=e14]: "1"
+        - generic [ref=e15]: Issue
+      - button "Collapse issues badge" [ref=e16]:
+        - img [ref=e17]
+  - alert
+  - dialog "Editar Cliente" [ref=e20]:
+    - heading "Editar Cliente" [level=2] [ref=e22]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: Nome Completo *
+          - textbox "Nome Completo *" [ref=e27]:
+            - /placeholder: João Silva
+            - text: Cliente Teste 1770828254993 Editado
+        - generic [ref=e28]:
+          - generic [ref=e29]: Telefone *
+          - textbox "Telefone *" [ref=e30]:
+            - /placeholder: (11) 99999-9999
+            - text: "11888888888"
+        - generic [ref=e31]:
+          - generic [ref=e32]: WhatsApp (Opcional)
+          - textbox "WhatsApp (Opcional)" [ref=e33]:
+            - /placeholder: (11) 99999-9999
+        - generic [ref=e34]:
+          - generic [ref=e35]: Email
+          - textbox "Email" [ref=e36]:
+            - /placeholder: joao@example.com
+        - generic [ref=e37]:
+          - generic [ref=e38]: CPF/CNPJ
+          - textbox "CPF/CNPJ" [ref=e39]:
+            - /placeholder: 000.000.000-00
+        - generic [ref=e40]:
+          - generic [ref=e41]: CEP
+          - textbox "CEP" [ref=e42]:
+            - /placeholder: 00000-000
+        - generic [ref=e43]:
+          - generic [ref=e44]: Endereço
+          - textbox "Endereço" [ref=e45]:
+            - /placeholder: Rua das Flores, 123
+        - generic [ref=e46]:
+          - generic [ref=e47]: Cidade
+          - textbox "Cidade" [ref=e48]:
+            - /placeholder: São Paulo
+        - generic [ref=e49]:
+          - generic [ref=e50]: Estado
+          - textbox "Estado" [ref=e51]:
+            - /placeholder: SP
+        - generic [ref=e52]:
+          - generic [ref=e53]: Observações
+          - textbox "Observações" [active] [ref=e54]:
+            - /placeholder: Informações adicionais...
+      - button "Atualizar Cliente" [ref=e56]
+    - button "Close" [ref=e57]:
+      - img
+      - generic [ref=e58]: Close
+```

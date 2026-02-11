@@ -15,6 +15,8 @@ import {
 import { LogOut, User, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 
+import { MobileSidebar } from "@/components/layout/MobileSidebar";
+
 export function Header() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
@@ -57,8 +59,9 @@ export function Header() {
     }
 
     return (
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-            <div>
+        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-6">
+            <div className="flex items-center gap-4">
+                <MobileSidebar />
                 <h1 className="text-lg font-semibold">TechAssist Pro</h1>
             </div>
 

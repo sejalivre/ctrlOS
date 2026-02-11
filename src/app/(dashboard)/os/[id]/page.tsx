@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
     ClipboardList,
@@ -11,7 +11,9 @@ import {
     Clock,
     AlertCircle,
     CheckCircle2,
-    Loader2
+    Loader2,
+    Wrench,
+    DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { format } from "date-fns";
 import Link from "next/link";
+import OSItemsSection from "@/components/forms/OSItemsSection";
 
 export default function OSDetailsPage() {
     const params = useParams();
@@ -66,6 +69,15 @@ export default function OSDetailsPage() {
             setIsUpdating(false);
         }
     };
+
+    const initialFinancials = useMemo(() => {
+        if (!order) return null;
+        return {
+            freightAmount: order.freightAmount || 0,
+            othersAmount: order.othersAmount || 0,
+            discountAmount: order.discountAmount || 0,
+        };
+    }, [order?.freightAmount, order?.othersAmount, order?.discountAmount]);
 
     if (isLoading) {
         return (
@@ -206,18 +218,15 @@ export default function OSDetailsPage() {
                     {/* Itens da OS */}
                     <OSItemsSection
                         serviceOrderId={params.id as string}
-                        initialData={{
-                            freightAmount: order.freightAmount || 0,
-                            othersAmount: order.othersAmount || 0,
-                            discountAmount: order.discountAmount || 0,
+                        initialData={initialFinancials || undefined}
+                        onTotalChange={(total) => {
+                            if (order && Math.abs((order.totalAmount || 0) - total) > 0.01) {
+                                setOrder((prev: any) => ({ ...prev, totalAmount: total }));
+                            }
                         }}
-                        onTotalChange={(total) => setOrder((prev: any) => ({ ...prev, totalAmount: total }))}
                     />
                 </div>
             </div>
         </div>
     );
 }
-
-import { Wrench, DollarSign } from "lucide-react";
-import OSItemsSection from "@/components/forms/OSItemsSection";

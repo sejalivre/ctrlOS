@@ -1,0 +1,182 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - complementary:
+      - generic:
+        - generic: C
+        - generic: ctrlOS
+      - navigation:
+        - link:
+          - /url: /
+          - img
+          - text: Dashboard
+        - link:
+          - /url: /os/dashboard
+          - img
+          - text: Dashboard OS
+        - link:
+          - /url: /os
+          - img
+          - text: Ordens de Serviço
+        - link:
+          - /url: /customers
+          - img
+          - text: Clientes
+        - link:
+          - /url: /products
+          - img
+          - text: Produtos
+        - link:
+          - /url: /services
+          - img
+          - text: Serviços
+        - link:
+          - /url: /budgets
+          - img
+          - text: Orçamentos
+        - link:
+          - /url: /sales
+          - img
+          - text: Vendas
+        - link:
+          - /url: /financial
+          - img
+          - text: Financeiro
+        - link:
+          - /url: /reports
+          - img
+          - text: Relatórios
+        - link:
+          - /url: /settings
+          - img
+          - text: Configurações
+      - generic:
+        - paragraph: ctrlOS v0.1.0
+    - generic:
+      - banner:
+        - generic:
+          - heading [level=1]: TechAssist Pro
+        - generic:
+          - button:
+            - generic:
+              - generic: U
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - heading [level=1]: Ordens de Serviço
+                - paragraph: Acompanhe e gerencie todos os serviços em andamento.
+            - button [expanded]:
+              - img
+              - text: Nova OS
+          - generic:
+            - generic:
+              - img
+              - textbox:
+                - /placeholder: Buscar por cliente, modelo ou série...
+            - generic:
+              - img
+              - combobox:
+                - generic: Todos os Status
+                - img
+          - generic:
+            - generic:
+              - table:
+                - rowgroup:
+                  - row:
+                    - columnheader: Nº OS
+                    - columnheader: Cliente
+                    - columnheader: Equipamento
+                    - columnheader: Status
+                    - columnheader: Data
+                    - columnheader: Ação
+                - rowgroup:
+                  - row:
+                    - cell: "#0002"
+                    - cell:
+                      - generic:
+                        - img
+                        - generic: Hugo Amaral
+                    - cell:
+                      - generic: Notebook 2 - 10
+                    - cell:
+                      - generic: Aberta
+                    - cell:
+                      - generic:
+                        - img
+                        - text: 10/02/2026
+                    - cell:
+                      - generic:
+                        - button:
+                          - generic: Abrir menu
+                          - img
+                  - row:
+                    - cell: "#0001"
+                    - cell:
+                      - generic:
+                        - img
+                        - generic: Hugo Amaral
+                    - cell:
+                      - generic: Notebook - Inspirom
+                    - cell:
+                      - generic: Aberta
+                    - cell:
+                      - generic:
+                        - img
+                        - text: 09/02/2026
+                    - cell:
+                      - generic:
+                        - button:
+                          - generic: Abrir menu
+                          - img
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e6] [cursor=pointer]:
+    - img [ref=e7]
+  - alert
+  - dialog "Abrir Nova Ordem de Serviço" [ref=e11]:
+    - heading "Abrir Nova Ordem de Serviço" [level=2] [ref=e13]
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]: Cliente *
+          - combobox [active] [ref=e18]:
+            - generic: Selecione um cliente
+            - img
+          - combobox [ref=e19]
+        - generic [ref=e20]:
+          - generic [ref=e21]: Prioridade
+          - combobox [ref=e22]:
+            - generic: Normal
+            - img
+          - combobox [ref=e23]
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - heading "Equipamentos" [level=3] [ref=e26]
+          - button "Adicionar Outro" [ref=e27]:
+            - img
+            - text: Adicionar Outro
+        - generic [ref=e29]:
+          - generic [ref=e31]: "Equipamento #1"
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - generic [ref=e34]: Tipo*
+              - 'textbox "ex: Notebook, PC" [ref=e35]'
+            - generic [ref=e36]:
+              - generic [ref=e37]: Marca
+              - 'textbox "ex: Dell, Samsung" [ref=e38]'
+            - generic [ref=e39]:
+              - generic [ref=e40]: Modelo
+              - 'textbox "ex: Inspiron 15" [ref=e41]'
+          - generic [ref=e42]:
+            - generic [ref=e43]: Problema Relatado*
+            - textbox "O que o cliente disse?" [ref=e44]
+      - button "Abrir Ordem de Serviço" [ref=e46]
+    - button "Close" [ref=e47]:
+      - img
+      - generic [ref=e48]: Close
+```
