@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
 
 export async function PUT(
     request: Request,
@@ -8,12 +9,21 @@ export async function PUT(
     try {
         const { id } = await params;
         const body = await request.json();
+        const schema = z.object({
+            name: z.string().min(1),
+            content: z.string().min(1),
+        });
+        const parsed = schema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const data = parsed.data;
 
         const term = await prisma.warrantyTerm.update({
             where: { id },
             data: {
-                name: body.name,
-                content: body.content,
+                name: data.name,
+                content: data.content,
             },
         });
 

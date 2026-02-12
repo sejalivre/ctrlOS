@@ -30,7 +30,7 @@ export function ServiceDialog({ initialData, onRefresh, trigger }: ServiceDialog
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button size="sm" variant={initialData ? "outline" : "default"}>
+                    <Button size="sm" variant={initialData ? "outline" : "default"} suppressHydrationWarning>
                         {initialData ? (
                             <Pencil className="h-4 w-4" />
                         ) : (

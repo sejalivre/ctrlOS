@@ -7,6 +7,22 @@ export async function GET() {
     try {
         const user = await getCurrentUserFromDatabase();
         if (!user) {
+            // Modo desenvolvimento: permite acesso se DISABLE_AUTH=1
+            if (process.env.DISABLE_AUTH === '1') {
+                const settings = await prisma.systemSettings.findUnique({
+                    where: { id: "global" }
+                });
+
+                if (!settings) {
+                    // Create default settings if not exists
+                    const defaultSettings = await prisma.systemSettings.create({
+                        data: { id: "global" }
+                    });
+                    return NextResponse.json({ settings: defaultSettings });
+                }
+
+                return NextResponse.json({ settings });
+            }
             return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
         }
 
@@ -32,6 +48,39 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const user = await getCurrentUserFromDatabase();
+        
+        // Modo desenvolvimento: permite edição se DISABLE_AUTH=1
+        if (process.env.DISABLE_AUTH === '1') {
+            const body = await request.json();
+            const settings = await prisma.systemSettings.upsert({
+                where: { id: "global" },
+                update: {
+                    companyName: body.companyName,
+                    companyLogo: body.companyLogo,
+                    companyPhone: body.companyPhone,
+                    companyEmail: body.companyEmail,
+                    companyAddress: body.companyAddress,
+                    companyDocument: body.companyDocument,
+                    currency: body.currency,
+                    footerText: body.footerText,
+                },
+                create: {
+                    id: "global",
+                    companyName: body.companyName,
+                    companyLogo: body.companyLogo,
+                    companyPhone: body.companyPhone,
+                    companyEmail: body.companyEmail,
+                    companyAddress: body.companyAddress,
+                    companyDocument: body.companyDocument,
+                    currency: body.currency,
+                    footerText: body.footerText,
+                }
+            });
+
+            return NextResponse.json({ settings });
+        }
+        
+        // Modo produção: verifica permissão de administrador
         if (!user || user.role !== "ADMIN") {
             return NextResponse.json({ error: "Apenas administradores podem alterar configurações" }, { status: 403 });
         }
@@ -68,4 +117,3 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Erro ao atualizar configurações" }, { status: 500 });
     }
 }
-

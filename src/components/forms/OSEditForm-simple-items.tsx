@@ -366,6 +366,8 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
   async function onSubmit(data: ServiceOrderFormData) {
     setIsSaving(true);
     try {
+      console.log("Submitting OS data:", data); // Log para debug
+      
       const response = await fetch(`/api/os/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -382,14 +384,16 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao atualizar OS");
+        const errorData = await response.json().catch(() => ({ error: "Erro desconhecido" }));
+        console.error("Erro ao atualizar OS:", errorData);
+        throw new Error(errorData.error || "Erro ao atualizar OS");
       }
 
       toast.success("Ordem de Serviço atualizada com sucesso!");
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Submit error:", error);
-      toast.error("Erro ao salvar ordem de serviço.");
+      toast.error(error instanceof Error ? error.message : "Erro ao salvar ordem de serviço.");
     } finally {
       setIsSaving(false);
     }
@@ -452,11 +456,13 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OPENED">Aberta</SelectItem>
-                  <SelectItem value="IN_PROGRESS">Em Manutenção</SelectItem>
-                  <SelectItem value="AWAITING_PARTS">Aguardando Peça</SelectItem>
-                  <SelectItem value="READY">Pronta para Entrega</SelectItem>
+                  <SelectItem value="IN_QUEUE">Na Fila</SelectItem>
+                  <SelectItem value="IN_PROGRESS">Em Andamento</SelectItem>
+                  <SelectItem value="AWAITING_PARTS">Aguardando Peças</SelectItem>
+                  <SelectItem value="READY">Pronto</SelectItem>
                   <SelectItem value="DELIVERED">Entregue</SelectItem>
                   <SelectItem value="CANCELLED">Cancelada</SelectItem>
+                  <SelectItem value="WARRANTY_RETURN">Retorno Garantia</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -464,16 +470,16 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
             <div className="space-y-2">
               <Label>Técnico Responsável</Label>
               <Select
-                value={form.watch("technicianId") || ""}
+                value={form.watch("technicianId")}
                 onValueChange={(value) => form.setValue("technicianId", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um técnico" />
                 </SelectTrigger>
                 <SelectContent>
-                  {technicians.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
+                  {technicians.map((technician) => (
+                    <SelectItem key={technician.id} value={technician.id}>
+                      {technician.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -490,94 +496,90 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
         </CardHeader>
         <CardContent className="space-y-4">
           {equipmentFields.map((field, index) => (
-            <Card key={field.id} className="border">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium">Equipamento #{index + 1}</h3>
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeEquipment(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+            <div key={field.id} className="border rounded-lg p-4 space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="font-medium">Equipamento #{index + 1}</h4>
+                {equipmentFields.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeEquipment(index)}
+                    className="text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <Label>Tipo *</Label>
-                    <Input
-                      {...form.register(`equipments.${index}.type`)}
-                      placeholder="ex: Notebook, PC"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Marca</Label>
-                    <Input
-                      {...form.register(`equipments.${index}.brand`)}
-                      placeholder="ex: Dell, Samsung"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Modelo</Label>
-                    <Input
-                      {...form.register(`equipments.${index}.model`)}
-                      placeholder="ex: Inspiron 15"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <Label>Problema Relatado *</Label>
-                  <Textarea
-                    {...form.register(`equipments.${index}.reportedIssue`)}
-                    placeholder="Descreva o problema relatado pelo cliente"
-                    className="min-h-[80px]"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Tipo</Label>
+                  <Input
+                    {...form.register(`equipments.${index}.type`)}
+                    placeholder="Ex: Notebook, PC, Celular"
                   />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="space-y-2">
-                    <Label>Diagnóstico</Label>
-                    <Textarea
-                      {...form.register(`equipments.${index}.diagnosis`)}
-                      placeholder="Diagnóstico técnico"
-                      className="min-h-[80px]"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Solução</Label>
-                    <Textarea
-                      {...form.register(`equipments.${index}.solution`)}
-                      placeholder="Solução aplicada"
-                      className="min-h-[80px]"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label>Marca</Label>
+                  <Input
+                    {...form.register(`equipments.${index}.brand`)}
+                    placeholder="Ex: Dell, Samsung"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Acessórios (Carregador, Cabos...)</Label>
-                    <Input
-                      {...form.register(`equipments.${index}.accessories`)}
-                      placeholder="ex: Carregador, Cabo HDMI"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Condições (Arranhado, Quebrado...)</Label>
-                    <Input
-                      {...form.register(`equipments.${index}.observations`)}
-                      placeholder="ex: Arranhado na tampa"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label>Modelo</Label>
+                  <Input
+                    {...form.register(`equipments.${index}.model`)}
+                    placeholder="Ex: Inspiron 15"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Problema Relatado</Label>
+                <Textarea
+                  {...form.register(`equipments.${index}.reportedIssue`)}
+                  placeholder="Descreva o problema relatado pelo cliente"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Diagnóstico</Label>
+                <Textarea
+                  {...form.register(`equipments.${index}.diagnosis`)}
+                  placeholder="Diagnóstico técnico"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Solução</Label>
+                <Textarea
+                  {...form.register(`equipments.${index}.solution`)}
+                  placeholder="Solução aplicada"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Acessórios</Label>
+                  <Input
+                    {...form.register(`equipments.${index}.accessories`)}
+                    placeholder="Ex: Carregador, Cabo HDMI"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Observações</Label>
+                  <Input
+                    {...form.register(`equipments.${index}.observations`)}
+                    placeholder="Ex: Arranhado na tampa"
+                  />
+                </div>
+              </div>
+            </div>
           ))}
 
           <Button
@@ -590,24 +592,45 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
               model: "",
               diagnosis: "",
               solution: "",
+              accessories: "",
+              observations: "",
             })}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Adicionar Outro Equipamento
+            Adicionar Equipamento
           </Button>
         </CardContent>
       </Card>
 
-      {/* Itens Simples (Table Layout) */}
+      {/* Itens e Serviços */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-bold flex items-center">
-            <Plus className="h-5 w-5 mr-2" /> Produtos/Peças e Serviços
-          </CardTitle>
+        <CardHeader>
+          <CardTitle>Itens e Serviços</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-[2fr_1fr_80px_120px_100px_120px_50px] gap-2 text-sm font-medium text-gray-500 px-2">
+            <span>Produto/Serviço</span>
+            <span>Descrição</span>
+            <span>Qtd</span>
+            <span>Valor Unit.</span>
+            <span>Desconto</span>
+            <span>Subtotal</span>
+            <span></span>
+          </div>
+          {itemFields.map((field, index) => (
+            <OSItemRow
+              key={field.id}
+              index={index}
+              form={form}
+              onRemove={removeItem}
+              onChange={handleItemChange}
+              fetchOptions={fetchItemOptions}
+            />
+          ))}
+
           <Button
             type="button"
-            variant="default"
-            size="sm"
+            variant="outline"
             onClick={() => appendItem({
               description: "",
               quantity: 1,
@@ -615,107 +638,63 @@ export default function OSEditFormSimpleItems({ orderId, initialData, onSuccess 
               discount: 0,
               totalPrice: 0,
             })}
-            className="bg-slate-900 text-white hover:bg-slate-800"
           >
-            <Plus className="h-4 w-4 mr-2" /> Adicionar produto
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Item
           </Button>
+
+          <div className="flex justify-end pt-4">
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Subtotal</div>
+              <div className="text-2xl font-bold">R$ {subtotal.toFixed(2)}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Informações de Pagamento */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações de Pagamento</CardTitle>
         </CardHeader>
-        <CardContent>
-          {/* Table Header */}
-          <div className="grid grid-cols-[2fr_1fr_80px_120px_100px_120px_50px] gap-2 border-y py-2 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-            <div className="px-2">Produto*</div>
-            <div className="px-1">Detalhes</div>
-            <div className="px-1">Quant.*</div>
-            <div className="px-1">Valor*</div>
-            <div className="px-1 text-red-500">Desconto</div>
-            <div className="px-1">Subtotal</div>
-            <div className="px-1 text-center">Ação</div>
-          </div>
-
-          <div className="min-h-[50px]">
-            {itemFields.map((field, index) => (
-              <OSItemRow
-                key={field.id}
-                index={index}
-                form={form}
-                onRemove={removeItem}
-                onChange={handleItemChange}
-                fetchOptions={fetchItemOptions}
-              />
-            ))}
-            {itemFields.length === 0 && (
-              <div className="py-8 text-center text-gray-400 text-sm">
-                Nenhum item adicionado. Clique acima para começar.
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 flex justify-end">
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 min-w-[250px] space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Subtotal de Itens:</span>
-                <span className="font-medium text-slate-700">R$ {subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center text-lg font-bold pt-2 border-t border-slate-200">
-                <span className="text-slate-900 uppercase text-xs tracking-widest">Total Geral:</span>
-                <span className="text-slate-900">R$ {subtotal.toFixed(2)}</span>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Forma de Pagamento</Label>
+              <Select
+                value={form.watch("paymentMethod")}
+                onValueChange={(value) => form.setValue("paymentMethod", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a forma de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Dinheiro</SelectItem>
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="CARD">Cartão</SelectItem>
+                  <SelectItem value="TRANSFER">Transferência</SelectItem>
+                  <SelectItem value="OTHER">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Total</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-lg text-gray-400">R$</span>
+                <Input
+                  type="number"
+                  value={subtotal.toFixed(2)}
+                  readOnly
+                  className="pl-8 text-lg font-bold bg-gray-50"
+                />
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Método de Pagamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pagamento</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Método de Pagamento</Label>
-            <Select
-              value={form.watch("paymentMethod") || ""}
-              onValueChange={(value) => form.setValue("paymentMethod", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o método de pagamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CASH">Dinheiro</SelectItem>
-                <SelectItem value="CREDIT_CARD">Cartão de Crédito</SelectItem>
-                <SelectItem value="DEBIT_CARD">Cartão de Débito</SelectItem>
-                <SelectItem value="PIX">PIX</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Transferência Bancária</SelectItem>
-                <SelectItem value="CHECK">Cheque</SelectItem>
-                <SelectItem value="OTHER">Outro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Total da OS (R$)</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={subtotal.toFixed(2)}
-              readOnly
-              className="bg-gray-50 font-bold text-lg"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Botões de Ação */}
-      <div className="flex justify-end gap-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => window.history.back()}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={isSaving} className="min-w-[120px]">
+      <div className="flex justify-end pt-4">
+        <Button type="submit" disabled={isSaving}>
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
