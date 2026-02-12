@@ -1,7 +1,7 @@
 # Page snapshot
 
 ```yaml
-- generic:
+- generic [active]:
   - generic:
     - complementary:
       - generic:
@@ -69,114 +69,92 @@
               - generic:
                 - img
               - generic:
-                - heading [level=1]: Ordens de Serviço
-                - paragraph: Acompanhe e gerencie todos os serviços em andamento.
+                - heading [level=1]: Gestão de Clientes
+                - paragraph: Cadastre e gerencie as informações dos seus clientes.
             - button [expanded]:
               - img
-              - text: Nova OS
+              - text: Novo Cliente
           - generic:
             - generic:
               - img
               - textbox:
-                - /placeholder: Buscar por cliente, modelo ou série...
-            - generic:
-              - img
-              - combobox:
-                - generic: Todos os Status
-                - img
+                - /placeholder: Buscar por nome, email ou telefone...
           - generic:
             - generic:
               - table:
                 - rowgroup:
                   - row:
-                    - columnheader: Nº OS
-                    - columnheader: Cliente
-                    - columnheader: Equipamento
-                    - columnheader: Status
-                    - columnheader: Data
-                    - columnheader: Ação
+                    - columnheader: Nome
+                    - columnheader: Contato
+                    - columnheader: Documento
+                    - columnheader: Cadastro
+                    - columnheader: Ações
                 - rowgroup:
                   - row:
-                    - cell: "#0002"
-                    - cell:
-                      - generic:
-                        - img
-                        - generic: Hugo Amaral
-                    - cell:
-                      - generic: Notebook 2 - 10
-                    - cell:
-                      - generic: Aberta
-                    - cell:
-                      - generic:
-                        - img
-                        - text: 10/02/2026
-                    - cell:
-                      - generic:
-                        - button:
-                          - generic: Abrir menu
-                          - img
-                  - row:
-                    - cell: "#0001"
-                    - cell:
-                      - generic:
-                        - img
-                        - generic: Hugo Amaral
-                    - cell:
-                      - generic: Notebook - Inspirom
-                    - cell:
-                      - generic: Aberta
-                    - cell:
-                      - generic:
-                        - img
-                        - text: 09/02/2026
-                    - cell:
-                      - generic:
-                        - button:
-                          - generic: Abrir menu
-                          - img
+                    - cell: Nenhum cliente encontrado.
   - region "Notifications alt+T"
-  - button "Open Next.js Dev Tools" [ref=e6] [cursor=pointer]:
-    - img [ref=e7]
+  - generic [ref=e5] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e6]:
+      - img [ref=e7]
+    - generic [ref=e10]:
+      - button "Open issues overlay" [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: "1"
+          - generic [ref=e14]: "2"
+        - generic [ref=e15]:
+          - text: Issue
+          - generic [ref=e16]: s
+      - button "Collapse issues badge" [ref=e17]:
+        - img [ref=e18]
   - alert
-  - dialog "Abrir Nova Ordem de Serviço" [ref=e11]:
-    - heading "Abrir Nova Ordem de Serviço" [level=2] [ref=e13]
-    - generic [ref=e14]:
-      - generic [ref=e15]:
-        - generic [ref=e16]:
-          - generic [ref=e17]: Cliente *
-          - combobox [active] [ref=e18]:
-            - generic: Selecione um cliente
-            - img
-          - combobox [ref=e19]
-        - generic [ref=e20]:
-          - generic [ref=e21]: Prioridade
-          - combobox [ref=e22]:
-            - generic: Normal
-            - img
-          - combobox [ref=e23]
-      - generic [ref=e24]:
-        - generic [ref=e25]:
-          - heading "Equipamentos" [level=3] [ref=e26]
-          - button "Adicionar Outro" [ref=e27]:
-            - img
-            - text: Adicionar Outro
+  - dialog "Cadastrar Novo Cliente" [ref=e21]:
+    - heading "Cadastrar Novo Cliente" [level=2] [ref=e23]
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: Nome Completo *
+          - textbox "Nome Completo *" [ref=e28]:
+            - /placeholder: João Silva
+            - text: Cliente OS 1770863241091
         - generic [ref=e29]:
-          - generic [ref=e31]: "Equipamento #1"
-          - generic [ref=e32]:
-            - generic [ref=e33]:
-              - generic [ref=e34]: Tipo*
-              - 'textbox "ex: Notebook, PC" [ref=e35]'
-            - generic [ref=e36]:
-              - generic [ref=e37]: Marca
-              - 'textbox "ex: Dell, Samsung" [ref=e38]'
-            - generic [ref=e39]:
-              - generic [ref=e40]: Modelo
-              - 'textbox "ex: Inspiron 15" [ref=e41]'
-          - generic [ref=e42]:
-            - generic [ref=e43]: Problema Relatado*
-            - textbox "O que o cliente disse?" [ref=e44]
-      - button "Abrir Ordem de Serviço" [ref=e46]
-    - button "Close" [ref=e47]:
+          - generic [ref=e30]: Telefone *
+          - textbox "Telefone *" [ref=e31]:
+            - /placeholder: (11) 99999-9999
+            - text: "11999999999"
+        - generic [ref=e32]:
+          - generic [ref=e33]: WhatsApp (Opcional)
+          - textbox "WhatsApp (Opcional)" [ref=e34]:
+            - /placeholder: (11) 99999-9999
+        - generic [ref=e35]:
+          - generic [ref=e36]: Email
+          - textbox "Email" [ref=e37]:
+            - /placeholder: joao@example.com
+        - generic [ref=e38]:
+          - generic [ref=e39]: CPF/CNPJ
+          - textbox "CPF/CNPJ" [ref=e40]:
+            - /placeholder: 000.000.000-00
+        - generic [ref=e41]:
+          - generic [ref=e42]: CEP
+          - textbox "CEP" [ref=e43]:
+            - /placeholder: 00000-000
+        - generic [ref=e44]:
+          - generic [ref=e45]: Endereço
+          - textbox "Endereço" [ref=e46]:
+            - /placeholder: Rua das Flores, 123
+        - generic [ref=e47]:
+          - generic [ref=e48]: Cidade
+          - textbox "Cidade" [ref=e49]:
+            - /placeholder: São Paulo
+        - generic [ref=e50]:
+          - generic [ref=e51]: Estado
+          - textbox "Estado" [ref=e52]:
+            - /placeholder: SP
+        - generic [ref=e53]:
+          - generic [ref=e54]: Observações
+          - textbox "Observações" [ref=e55]:
+            - /placeholder: Informações adicionais...
+      - button "Cadastrar Cliente" [ref=e57]
+    - button "Close" [ref=e58]:
       - img
-      - generic [ref=e48]: Close
+      - generic [ref=e59]: Close
 ```
