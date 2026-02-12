@@ -35,16 +35,28 @@ async function getStats() {
 }
 
 export default async function HomePage() {
-  // Sincroniza usuário do Supabase Auth com nosso banco
-  const user = await syncUserWithDatabase();
-
-  // Se não autenticado, redireciona para login
-  if (!user) {
-    redirect("/login");
+  const disableAuth = process.env.DISABLE_AUTH === "1";
+  if (!disableAuth) {
+    const user = await syncUserWithDatabase();
+    if (!user) {
+      redirect("/login");
+    }
   }
 
   // Se autenticado, exibe o dashboard
-  const { customerCount, openOrdersCount, productCount, recentOrders } = await getStats();
+  let customerCount = 0, openOrdersCount = 0, productCount = 0, recentOrders: any[] = [];
+  try {
+    const stats = await getStats();
+    customerCount = stats.customerCount;
+    openOrdersCount = stats.openOrdersCount;
+    productCount = stats.productCount;
+    recentOrders = stats.recentOrders as any[];
+  } catch {
+    customerCount = 0;
+    openOrdersCount = 0;
+    productCount = 0;
+    recentOrders = [];
+  }
 
   const stats = [
     {

@@ -3,6 +3,9 @@ import { createServerSupabaseClient } from './supabase-server'
 
 // Sincroniza usuário do Supabase Auth com nossa tabela User
 export async function syncUserWithDatabase() {
+  if (process.env.DISABLE_AUTH === '1') {
+    return null
+  }
   let supabase: any
   try {
     supabase = await createServerSupabaseClient()
@@ -17,30 +20,43 @@ export async function syncUserWithDatabase() {
   }
   
   // Verifica se usuário já existe no banco
-  const existingUser = await prisma.user.findUnique({
-    where: { authId: user.id }
-  })
+  let existingUser = null
+  try {
+    existingUser = await prisma.user.findUnique({
+      where: { authId: user.id }
+    })
+  } catch {
+    return null
+  }
   
   if (existingUser) {
     return existingUser
   }
   
   // Cria novo usuário no banco
-  const newUser = await prisma.user.create({
-    data: {
-      authId: user.id,
-      name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
-      email: user.email!,
-      role: 'TECHNICIAN', // Role padrão
-      active: true
-    }
-  })
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        authId: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuário',
+        email: user.email!,
+        role: 'TECHNICIAN', // Role padrão
+        active: true
+      }
+    })
+    return newUser
+  } catch {
+    return null
+  }
   
-  return newUser
+  
 }
 
 // Obtém usuário atual (do banco) baseado na sessão do Supabase
 export async function getCurrentUserFromDatabase() {
+  if (process.env.DISABLE_AUTH === '1') {
+    return null
+  }
   let supabase: any
   try {
     supabase = await createServerSupabaseClient()
@@ -54,11 +70,16 @@ export async function getCurrentUserFromDatabase() {
     return null
   }
   
-  const dbUser = await prisma.user.findUnique({
-    where: { authId: user.id }
-  })
+  try {
+    const dbUser = await prisma.user.findUnique({
+      where: { authId: user.id }
+    })
+    return dbUser
+  } catch {
+    return null
+  }
   
-  return dbUser
+  
 }
 
 // Helper para verificar permissões

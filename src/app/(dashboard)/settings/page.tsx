@@ -13,6 +13,8 @@ import { WarrantyTermForm } from "@/components/forms/WarrantyTermForm";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { FileText } from "lucide-react";
+import { ProfileForm as SettingsProfile } from "@/components/forms/ProfileForm";
+import { SecurityForm as SettingsSecurity } from "@/components/forms/SecurityForm";
 
 export default function SettingsPage() {
     const [settings, setSettings] = useState<any>(null);
@@ -192,8 +194,11 @@ export default function SettingsPage() {
                             <CardTitle>Perfil do Usuário</CardTitle>
                             <CardDescription>Gerencie suas informações pessoais e preferências de conta.</CardDescription>
                         </CardHeader>
-                        <CardContent className="h-64 flex items-center justify-center border-t border-dashed bg-slate-50/50">
-                            <p className="text-slate-400 italic font-medium">Módulo de perfil em breve...</p>
+                        <CardContent className="border-t">
+                            {/* Profile form */}
+                            <div className="max-w-xl">
+                                <SettingsProfile />
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -204,8 +209,10 @@ export default function SettingsPage() {
                             <CardTitle>Segurança da Conta</CardTitle>
                             <CardDescription>Configurações de senha e autenticação de dois fatores.</CardDescription>
                         </CardHeader>
-                        <CardContent className="h-64 flex items-center justify-center border-t border-dashed bg-slate-50/50">
-                            <p className="text-slate-400 italic font-medium">Módulo de segurança em breve...</p>
+                        <CardContent className="border-t">
+                            <div className="max-w-xl">
+                                <SettingsSecurity />
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
