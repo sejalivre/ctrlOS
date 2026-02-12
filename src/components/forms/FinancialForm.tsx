@@ -151,7 +151,8 @@ export function FinancialForm({ initialData, onSuccess }: FinancialFormProps) {
                                         <SelectItem value="DEBIT_CARD">Débito</SelectItem>
                                         <SelectItem value="CREDIT_CARD">Crédito</SelectItem>
                                         <SelectItem value="BANK_TRANSFER">Transferência</SelectItem>
-                                        <SelectItem value="PROMISSORY_NOTE">Promissória</SelectItem>
+                                        <SelectItem value="CHECK">Cheque</SelectItem>
+                                        <SelectItem value="OTHER">Outro</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />

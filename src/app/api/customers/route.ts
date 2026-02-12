@@ -1,6 +1,7 @@
 // Verification: 2026-02-11 18:34:21
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { customerSchema } from "@/schemas/customer";
 
 export const dynamic = 'force-dynamic';
 
@@ -54,17 +55,23 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+        const parsed = customerSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const data = parsed.data;
 
         const customer = await prisma.customer.create({
             data: {
-                name: body.name,
-                phone: body.phone,
-                email: body.email,
-                document: body.document,
-                address: body.address,
-                city: body.city,
-                state: body.state,
-                zipCode: body.zipCode,
+                name: data.name,
+                phone: data.phone,
+                email: data.email || null,
+                document: data.document || null,
+                address: data.address || null,
+                city: data.city || null,
+                state: data.state || null,
+                zipCode: data.zipCode || null,
+                notes: data.notes || null,
             },
         });
 
