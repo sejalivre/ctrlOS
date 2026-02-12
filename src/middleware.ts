@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  if (process.env.DISABLE_AUTH === '1') {
+    return NextResponse.next({ request })
+  }
   // Validate environment variables
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     console.error(
@@ -58,20 +61,15 @@ export async function middleware(request: NextRequest) {
       !request.nextUrl.pathname.startsWith('/login') &&
       !request.nextUrl.pathname.startsWith('/api/auth'))
 
-  // Se não está autenticado e tenta acessar dashboard, redireciona para login
-  // Temporariamente desativado para testes
-  /*
   if (!user && isDashboardPage) {
     const redirectUrl = new URL('/login', request.url)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Se está autenticado e tenta acessar login, redireciona para dashboard
   if (user && isAuthPage) {
     const redirectUrl = new URL('/', request.url)
     return NextResponse.redirect(redirectUrl)
   }
-  */
 
   return supabaseResponse
 }

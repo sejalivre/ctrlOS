@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { financialRecordSchema } from "@/schemas/financial";
+import { z } from "zod";
 
 export async function PATCH(
     request: Request,
@@ -8,16 +10,22 @@ export async function PATCH(
     try {
         const { id } = await params;
         const body = await request.json();
+        const patchSchema = financialRecordSchema.partial();
+        const parsed = patchSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const data = parsed.data;
         const record = await prisma.financialRecord.update({
             where: { id },
             data: {
-                type: body.type,
-                description: body.description,
-                amount: body.amount,
-                paymentMethod: body.paymentMethod || null,
-                paid: body.paid,
-                dueDate: body.dueDate ? new Date(body.dueDate) : null,
-                paidAt: body.paidAt ? new Date(body.paidAt) : null,
+                type: data.type || undefined,
+                description: data.description || undefined,
+                amount: data.amount !== undefined ? Number(data.amount) : undefined,
+                paymentMethod: data.paymentMethod || null,
+                paid: data.paid !== undefined ? data.paid : undefined,
+                dueDate: data.dueDate ? new Date(data.dueDate) : null,
+                paidAt: data.paidAt ? new Date(data.paidAt) : null,
             },
         });
         return NextResponse.json({ record });

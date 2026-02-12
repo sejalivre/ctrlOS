@@ -1,6 +1,7 @@
 // Verification: 2026-02-11 18:34:21
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { productSchema } from "@/schemas/product";
 
 export const dynamic = 'force-dynamic';
 
@@ -54,18 +55,23 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+        const parsed = productSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const data = parsed.data;
 
         const product = await prisma.product.create({
             data: {
-                name: body.name,
-                description: body.description,
+                name: data.name,
+                description: data.description ?? null,
                 supplierId: body.supplierId || null,
-                costPrice: body.costPrice,
-                salePrice: body.salePrice,
-                profitMargin: body.profitMargin,
-                stockQty: body.stockQty,
-                minStock: body.minStock,
-                active: body.active ?? true,
+                costPrice: data.costPrice,
+                salePrice: data.salePrice,
+                profitMargin: body.profitMargin ?? null,
+                stockQty: data.stockQty,
+                minStock: data.minStock,
+                active: data.active ?? true,
             },
         });
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { serviceOrderSchema, osStatusEnum, priorityEnum } from "@/schemas/os";
+import { z } from "zod";
 
 // GET - Get single OS details
 export async function GET(
@@ -43,7 +45,25 @@ export async function PATCH(
     try {
         const { id } = await params;
         const body = await request.json();
-        const { status, priority, technicianId, promisedDate, diagnosis, solution } = body;
+        const patchSchema = z.object({
+            status: osStatusEnum.optional(),
+            priority: priorityEnum.optional(),
+            technicianId: z.string().optional(),
+            promisedDate: z.string().optional(),
+            paymentMethod: z.string().optional(),
+            paid: z.boolean().optional(),
+            warrantyTerms: z.string().optional(),
+            diagnosis: z.string().optional(),
+            solution: z.string().optional(),
+        });
+        const parsed = patchSchema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const { status, priority, technicianId, promisedDate, diagnosis, solution } = parsed.data;
+        const paymentMethodInput = parsed.data.paymentMethod;
+        const paid = parsed.data.paid;
+        const warrantyTerms = parsed.data.warrantyTerms;
 
         // First update the ServiceOrder itself
         const order = await prisma.serviceOrder.update({
@@ -53,15 +73,15 @@ export async function PATCH(
                 priority: priority || undefined,
                 technicianId: technicianId || undefined,
                 promisedDate: promisedDate ? new Date(promisedDate) : undefined,
-                paymentMethod: body.paymentMethod || undefined,
-                paid: body.paid !== undefined ? body.paid : undefined,
-                paidAt: body.paid ? new Date() : (body.paid === false ? null : undefined),
-                warrantyTerms: body.warrantyTerms !== undefined ? body.warrantyTerms : undefined,
+                paymentMethod: normalizePaymentMethod(paymentMethodInput) || undefined,
+                paid: paid !== undefined ? paid : undefined,
+                paidAt: paid ? new Date() : (paid === false ? null : undefined),
+                warrantyTerms: warrantyTerms !== undefined ? warrantyTerms : undefined,
             },
         });
 
         // Handle Financial Record if Paid
-        if (body.paid) {
+        if (paid) {
             const existingRecord = await prisma.financialRecord.findFirst({
                 where: { serviceOrderId: id }
             });
@@ -126,7 +146,6 @@ export async function PUT(
     try {
         const { id } = await params;
         const body = await request.json();
-        console.log("PUT request body:", JSON.stringify(body, null, 2));
         const {
             customerId,
             technicianId,
@@ -138,6 +157,22 @@ export async function PUT(
             totalAmount,
             paymentMethod
         } = body;
+        const parsed = serviceOrderSchema.safeParse({
+            customerId,
+            technicianId,
+            priority,
+            status,
+            promisedDate,
+            equipments,
+            items,
+            totalAmount: totalAmount !== undefined ? Number(totalAmount) : undefined,
+            paymentMethod,
+            warrantyTerms: body.warrantyTerms ?? null,
+        });
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const valid = parsed.data;
 
         // Start a transaction to update everything
         const result = await prisma.$transaction(async (tx) => {
@@ -145,16 +180,16 @@ export async function PUT(
             const order = await tx.serviceOrder.update({
                 where: { id },
                 data: {
-                    customerId,
-                    technicianId: technicianId || null,
-                    priority,
-                    status,
-                    promisedDate: promisedDate ? new Date(promisedDate) : null,
-                    totalAmount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
-                    paymentMethod: paymentMethod || null,
+                    customerId: valid.customerId,
+                    technicianId: valid.technicianId || null,
+                    priority: valid.priority,
+                    status: valid.status,
+                    promisedDate: valid.promisedDate ? new Date(valid.promisedDate) : null,
+                    totalAmount: valid.totalAmount ? parseFloat(valid.totalAmount.toString()) : 0,
+                    paymentMethod: normalizePaymentMethod(valid.paymentMethod) || null,
                     paid: body.paid ?? false,
                     paidAt: body.paid ? new Date() : null,
-                    warrantyTerms: body.warrantyTerms || null,
+                    warrantyTerms: valid.warrantyTerms || null,
                 },
             });
 
@@ -168,8 +203,8 @@ export async function PUT(
                     await tx.financialRecord.update({
                         where: { id: existingRecord.id },
                         data: {
-                            amount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
-                            paymentMethod: paymentMethod || "CASH",
+                            amount: valid.totalAmount ? parseFloat(valid.totalAmount.toString()) : 0,
+                            paymentMethod: normalizePaymentMethod(valid.paymentMethod) || "CASH",
                             paid: true,
                             paidAt: new Date(),
                         }
@@ -179,11 +214,11 @@ export async function PUT(
                         data: {
                             type: "REVENUE",
                             category: "Serviço",
-                            description: `OS #${order.orderNumber} - ${body.status || order.status}`,
-                            amount: totalAmount ? parseFloat(totalAmount.toString()) : 0,
-                            paymentMethod: paymentMethod || "CASH",
+                            description: `OS #${order.orderNumber} - ${valid.status || order.status}`,
+                            amount: valid.totalAmount ? parseFloat(valid.totalAmount.toString()) : 0,
+                            paymentMethod: normalizePaymentMethod(valid.paymentMethod) || "CASH",
                             serviceOrderId: id,
-                            customerId: customerId,
+                            customerId: valid.customerId,
                             paid: true,
                             paidAt: new Date(),
                         }
@@ -197,8 +232,8 @@ export async function PUT(
             });
 
             // Create new items if provided
-            if (items && items.length > 0) {
-                const validItems = items.filter((item: any) => item.description || item.productId || item.serviceId);
+            if (valid.items && valid.items.length > 0) {
+                const validItems = valid.items.filter((item: any) => item.description || item.productId || item.serviceId);
 
                 if (validItems.length > 0) {
                     await tx.serviceOrderItem.createMany({
@@ -224,13 +259,13 @@ export async function PUT(
             }
 
             // Update equipments if provided
-            if (equipments && equipments.length > 0) {
+            if (valid.equipments && valid.equipments.length > 0) {
                 await tx.equipment.deleteMany({
                     where: { serviceOrderId: id }
                 });
 
                 await tx.equipment.createMany({
-                    data: equipments.map((eq: any) => ({
+                    data: valid.equipments.map((eq: any) => ({
                         serviceOrderId: id,
                         type: eq.type,
                         brand: eq.brand || null,
@@ -271,4 +306,20 @@ export async function DELETE(
     } catch (error) {
         return NextResponse.json({ error: "Erro ao excluir OS" }, { status: 500 });
     }
+}
+
+function normalizePaymentMethod(input?: string | null) {
+  if (!input) return null
+  const map: Record<string, string> = {
+    TRANSFER: "BANK_TRANSFER",
+    BANK_TRANSFER: "BANK_TRANSFER",
+    CASH: "CASH",
+    CREDIT_CARD: "CREDIT_CARD",
+    DEBIT_CARD: "DEBIT_CARD",
+    PIX: "PIX",
+    CHECK: "CHECK",
+    OTHER: "OTHER",
+  }
+  const key = input.toUpperCase()
+  return (map[key] as any) ?? null
 }

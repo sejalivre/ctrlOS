@@ -1,6 +1,8 @@
 // Verification: 2026-02-11 18:34:21
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { financialRecordSchema } from "@/schemas/financial";
+import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
 
@@ -39,44 +41,50 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-
-        // Create financial record
-        console.log("Creating financial record with data:", JSON.stringify({
+        const parsed = financialRecordSchema.safeParse({
             type: body.type,
             description: body.description,
             category: body.category,
-            amount: body.amount,
+            amount: Number(body.amount),
             paymentMethod: body.paymentMethod,
-            paid: body.paid,
-            paidAt: body.paidAt,
-            customerId: body.customerId,
-            serviceOrderId: body.serviceOrderId,
-        }, null, 2));
+            paid: !!body.paid,
+            paidAt: body.paidAt ?? null,
+            dueDate: body.dueDate ?? null,
+            customerId: body.customerId ?? null,
+            serviceOrderId: body.serviceOrderId ?? null,
+        });
+        if (!parsed.success) {
+            return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+        }
+        const data = parsed.data;
+
+        // Create financial record
+        console.log("Creating financial record with data:", JSON.stringify(data, null, 2));
 
         const record = await prisma.financialRecord.create({
             data: {
-                type: body.type, // REVENUE, EXPENSE, etc.
-                description: body.description,
-                category: body.category || null,
-                amount: body.amount,
-                paymentMethod: body.paymentMethod,
-                paid: body.paid,
-                paidAt: body.paidAt ? new Date(body.paidAt) : null,
-                dueDate: body.dueDate ? new Date(body.dueDate) : null,
-                customerId: body.customerId,
-                serviceOrderId: body.serviceOrderId,
+                type: data.type,
+                description: data.description,
+                category: data.category || null,
+                amount: data.amount,
+                paymentMethod: normalizePaymentMethod(data.paymentMethod) || null,
+                paid: data.paid,
+                paidAt: data.paidAt ? new Date(data.paidAt) : null,
+                dueDate: data.dueDate ? new Date(data.dueDate) : null,
+                customerId: data.customerId || null,
+                serviceOrderId: data.serviceOrderId || null,
                 // userId could be added here if we had the authenticated user in session
             },
         });
 
         // If linked to a Service Order and paid, we might want to update the OS status or paid flag
-        if (body.serviceOrderId && body.paid) {
+        if (data.serviceOrderId && data.paid) {
             await prisma.serviceOrder.update({
-                where: { id: body.serviceOrderId },
+                where: { id: data.serviceOrderId },
                 data: {
                     paid: true,
                     paidAt: new Date(),
-                    paymentMethod: body.paymentMethod
+                    paymentMethod: normalizePaymentMethod(data.paymentMethod) || "CASH"
                 }
             });
         }
@@ -89,5 +97,21 @@ export async function POST(request: Request) {
             { status: 500 }
         );
     }
+}
+
+function normalizePaymentMethod(input?: string | null) {
+  if (!input) return null
+  const map: Record<string, string> = {
+    TRANSFER: "BANK_TRANSFER",
+    BANK_TRANSFER: "BANK_TRANSFER",
+    CASH: "CASH",
+    CREDIT_CARD: "CREDIT_CARD",
+    DEBIT_CARD: "DEBIT_CARD",
+    PIX: "PIX",
+    CHECK: "CHECK",
+    OTHER: "OTHER",
+  }
+  const key = input.toUpperCase()
+  return (map[key] as any) ?? null
 }
 

@@ -10,11 +10,13 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    // Temporariamente desativado para testes
-    // const user = await syncUserWithDatabase();
-    // if (!user) {
-    //     redirect("/login");
-    // }
+    const disableAuth = process.env.DISABLE_AUTH === "1";
+    if (!disableAuth) {
+        const user = await syncUserWithDatabase();
+        if (!user) {
+            redirect("/login");
+        }
+    }
 
     return (
         <Providers>

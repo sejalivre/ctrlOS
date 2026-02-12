@@ -3,7 +3,12 @@ import { createServerSupabaseClient } from './supabase-server'
 
 // Sincroniza usuário do Supabase Auth com nossa tabela User
 export async function syncUserWithDatabase() {
-  const supabase = await createServerSupabaseClient()
+  let supabase: any
+  try {
+    supabase = await createServerSupabaseClient()
+  } catch {
+    return null
+  }
   
   const { data: { user }, error } = await supabase.auth.getUser()
   
@@ -36,7 +41,12 @@ export async function syncUserWithDatabase() {
 
 // Obtém usuário atual (do banco) baseado na sessão do Supabase
 export async function getCurrentUserFromDatabase() {
-  const supabase = await createServerSupabaseClient()
+  let supabase: any
+  try {
+    supabase = await createServerSupabaseClient()
+  } catch {
+    return null
+  }
   
   const { data: { user }, error } = await supabase.auth.getUser()
   
